@@ -2,20 +2,23 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/db/supabase";
 
 export async function GET() {
-  const { error } = await supabase.auth.getSession();
+  const { data, error } = await supabase
+    .from("health_check")
+    .select("*")
+    .limit(1);
 
   if (error) {
     return NextResponse.json(
       {
-        status: "error",
-        message: error.message,
+        success: false,
+        error: error.message,
       },
       { status: 500 }
     );
   }
 
   return NextResponse.json({
-    status: "ok",
-    message: "Supabase connection successful",
+    success: true,
+    data,
   });
 }
