@@ -19,7 +19,6 @@ export async function createClient() {
             });
           } catch {
             // Ignore if called from a Server Component.
-            // Session refresh is handled by proxy.ts.
           }
         },
       },
