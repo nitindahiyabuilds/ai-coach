@@ -10,6 +10,7 @@ const activityMultipliers: Record<ActivityLevel, number> = {
 };
 
 export function calculateTDEE(profile: UserProfile): number {
+
   const bmr = calculateBMR(profile);
 
   return bmr * activityMultipliers[profile.activityLevel];

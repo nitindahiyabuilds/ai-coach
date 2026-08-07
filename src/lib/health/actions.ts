@@ -24,11 +24,18 @@ export async function getHealthMetrics() {
   }
 
   return calculateHealthMetrics({
-    age: profile.age,
-    sex: profile.sex,
-    height: profile.height_cm,
-    weight: profile.weight_kg,
-    activityLevel: profile.activity_level,
-    goal: profile.goal,
-  });
+  age: profile.age,
+  sex: profile.sex,
+  height: profile.height_cm,
+  weight: profile.weight_kg,
+  activityLevel:
+    profile.activity_level === "Low"
+      ? "light"
+      : profile.activity_level === "Moderate"
+        ? "moderate"
+        : profile.activity_level === "High"
+          ? "active"
+          : "sedentary",
+  goal: profile.goal,
+});
 }
