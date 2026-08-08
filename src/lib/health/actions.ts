@@ -28,14 +28,7 @@ export async function getHealthMetrics() {
   sex: profile.sex,
   height: profile.height_cm,
   weight: profile.weight_kg,
-  activityLevel:
-    profile.activity_level === "Low"
-      ? "light"
-      : profile.activity_level === "Moderate"
-        ? "moderate"
-        : profile.activity_level === "High"
-          ? "active"
-          : "sedentary",
+  activityLevel: profile.activity_level,
   goal: profile.goal,
 });
 }

@@ -68,19 +68,27 @@ export default function ProfileForm() {
         <option value="female">Female</option>
       </select>
 
-      <input
+      <select
         name="activity_level"
-        placeholder="Activity Level"
         required
         className="rounded-md border p-3"
-      />
+      >
+        <option value="">Activity Level</option>
+        <option value="light">Low</option>
+        <option value="moderate">Moderate</option>
+        <option value="active">High</option>
+      </select>
 
-      <input
+      <select
         name="goal"
-        placeholder="Goal"
         required
         className="rounded-md border p-3"
-      />
+      >
+        <option value="">Goal</option>
+        <option value="fat_loss">Lose Fat</option>
+        <option value="maintenance">Maintain</option>
+        <option value="muscle_gain">Build Muscle</option>
+      </select>
 
       <input
         name="training_experience"
