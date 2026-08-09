@@ -62,8 +62,11 @@ export default function ProfileForm() {
         name="sex"
         required
         className="rounded-md border p-3"
+        defaultValue=""
       >
-        <option value="">Sex</option>
+        <option value="" disabled>
+          Sex
+        </option>
         <option value="male">Male</option>
         <option value="female">Female</option>
       </select>
@@ -72,8 +75,11 @@ export default function ProfileForm() {
         name="activity_level"
         required
         className="rounded-md border p-3"
+        defaultValue=""
       >
-        <option value="">Activity Level</option>
+        <option value="" disabled>
+          Activity Level
+        </option>
         <option value="light">Low</option>
         <option value="moderate">Moderate</option>
         <option value="active">High</option>
@@ -83,40 +89,75 @@ export default function ProfileForm() {
         name="goal"
         required
         className="rounded-md border p-3"
+        defaultValue=""
       >
-        <option value="">Goal</option>
+        <option value="" disabled>
+          Goal
+        </option>
         <option value="fat_loss">Lose Fat</option>
         <option value="maintenance">Maintain</option>
         <option value="muscle_gain">Build Muscle</option>
       </select>
 
-      <input
+      <select
         name="training_experience"
-        placeholder="Training Experience"
         required
         className="rounded-md border p-3"
-      />
+        defaultValue=""
+      >
+        <option value="" disabled>
+          Training Experience
+        </option>
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="advanced">Advanced</option>
+      </select>
 
-      <input
+      <select
         name="equipment"
-        placeholder="Equipment"
         required
         className="rounded-md border p-3"
-      />
+        defaultValue=""
+      >
+        <option value="" disabled>
+          Equipment
+        </option>
+        <option value="gym">Gym</option>
+        <option value="home">Home Equipment</option>
+        <option value="bodyweight">Bodyweight Only</option>
+      </select>
 
-      <input
+      <select
         name="dietary_preference"
-        placeholder="Dietary Preference"
         required
         className="rounded-md border p-3"
-      />
+        defaultValue=""
+      >
+        <option value="" disabled>
+          Dietary Preference
+        </option>
+        <option value="vegetarian">Vegetarian</option>
+        <option value="non_vegetarian">Non-Vegetarian</option>
+        <option value="vegan">Vegan</option>
+      </select>
 
-      <input
+      <select
         name="region"
-        placeholder="Region"
         required
         className="rounded-md border p-3"
-      />
+        defaultValue=""
+      >
+        <option value="" disabled>
+          Region
+        </option>
+        <option value="New Delhi">New Delhi</option>
+        <option value="Mumbai">Mumbai</option>
+        <option value="Bangalore">Bangalore</option>
+        <option value="Hyderabad">Hyderabad</option>
+        <option value="Chennai">Chennai</option>
+        <option value="Kolkata">Kolkata</option>
+        <option value="Other">Other</option>
+      </select>
 
       <button
         type="submit"
