@@ -46,7 +46,7 @@ export async function createProfile(
 
   const supabase = await createClient();
 
-  const { error } = await supabase.from("profiles").insert({
+  const { error } = await supabase.from("profiles").upsert({
     id: user.id,
     full_name: parsed.data.full_name,
     age: parsed.data.age,
@@ -59,7 +59,11 @@ export async function createProfile(
     equipment: parsed.data.equipment,
     dietary_preference: parsed.data.dietary_preference,
     region: parsed.data.region,
-  });
+    },
+  {
+    onConflict: "id",
+  }
+);
 
   if (error) {
     return {
