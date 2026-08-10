@@ -30,7 +30,7 @@ export default function ProfileForm() {
         name="full_name"
         placeholder="Full Name"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white placeholder:text-gray-400"
       />
 
       <input
@@ -38,7 +38,7 @@ export default function ProfileForm() {
         type="number"
         placeholder="Age"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white placeholder:text-gray-400"
       />
 
       <input
@@ -46,7 +46,7 @@ export default function ProfileForm() {
         type="number"
         placeholder="Height (cm)"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white placeholder:text-gray-400"
       />
 
       <input
@@ -55,13 +55,14 @@ export default function ProfileForm() {
         step="0.1"
         placeholder="Weight (kg)"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white placeholder:text-gray-400"
       />
 
       <select
         name="sex"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white"
+        style={{ colorScheme: "dark" }}
         defaultValue=""
       >
         <option value="" disabled>
@@ -74,7 +75,8 @@ export default function ProfileForm() {
       <select
         name="activity_level"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white"
+        style={{ colorScheme: "dark" }}
         defaultValue=""
       >
         <option value="" disabled>
@@ -88,7 +90,8 @@ export default function ProfileForm() {
       <select
         name="goal"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white"
+        style={{ colorScheme: "dark" }}
         defaultValue=""
       >
         <option value="" disabled>
@@ -102,7 +105,8 @@ export default function ProfileForm() {
       <select
         name="training_experience"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white"
+        style={{ colorScheme: "dark" }}
         defaultValue=""
       >
         <option value="" disabled>
@@ -116,7 +120,8 @@ export default function ProfileForm() {
       <select
         name="equipment"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white"
+        style={{ colorScheme: "dark" }}
         defaultValue=""
       >
         <option value="" disabled>
@@ -130,7 +135,8 @@ export default function ProfileForm() {
       <select
         name="dietary_preference"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white"
+          style={{ colorScheme: "dark" }}
         defaultValue=""
       >
         <option value="" disabled>
@@ -144,7 +150,8 @@ export default function ProfileForm() {
       <select
         name="region"
         required
-        className="rounded-md border p-3"
+        className="rounded-md border border-gray-600 bg-black p-3 text-white"
+        style={{ colorScheme: "dark" }}
         defaultValue=""
       >
         <option value="" disabled>
