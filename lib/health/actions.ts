@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/user";
-import { calculateHealthMetrics } from "@/services/calculation";
+import { calculateHealthMetrics } from "@/lib/calculations";
 
 export async function getHealthMetrics() {
   const user = await getCurrentUser();

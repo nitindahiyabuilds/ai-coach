@@ -1,4 +1,4 @@
-import { getHealthMetrics } from "@/src/lib/health/actions";
+import { getHealthMetrics } from "@/lib/health/actions";
 
 export default async function Home() {
   const metrics = await getHealthMetrics();
