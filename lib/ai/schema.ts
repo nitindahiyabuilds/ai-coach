@@ -12,3 +12,11 @@ export const healthExplanationSchema = z.object({
 export type HealthExplanation = z.infer<
   typeof healthExplanationSchema
 >;
+
+export const coachResponseSchema = z.object({
+  answer: z.string(),
+});
+
+export type CoachResponse = z.infer<
+  typeof coachResponseSchema
+>;
