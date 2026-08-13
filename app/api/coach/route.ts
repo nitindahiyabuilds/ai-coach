@@ -4,6 +4,7 @@ import {
   getCoachMessages,
   saveCoachMessage,
 } from "@/lib/memory/coach";
+import { buildCoachPrompt } from "@/lib/ai/coach/prompt";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -33,51 +34,11 @@ export async function POST(request: Request) {
 
     const history = await getCoachMessages(20);
 
-    const conversationHistory =
-      history.length > 0
-        ? history
-            .map(
-              (message) =>
-                `${message.role.toUpperCase()}: ${message.content}`
-            )
-            .join("\n")
-        : "No previous conversation.";
-
-    const prompt = `
-You are the AI health coach inside AI OS.
-
-Your job is to provide useful, practical, and personalized health and fitness guidance.
-
-Use the user's context below when it is relevant.
-
-Do not invent user information.
-
-Do not recalculate health metrics yourself. The application has already calculated them.
-
-For health, fitness, nutrition, or lifestyle questions, provide clear and practical guidance.
-
-If the question requires information that is not available in the user's context, say so rather than inventing it.
-
-USER CONTEXT:
-
-${JSON.stringify(context, null, 2)}
-
-CONVERSATION HISTORY:
-
-${conversationHistory}
-
-CURRENT USER QUESTION:
-
-${question}
-
-Use the conversation history when it is relevant to the current question.
-
-Return your response as JSON with exactly this structure:
-
-{
-  "answer": "your answer here"
-}
-`;
+    const prompt = buildCoachPrompt({
+      context,
+      history,
+      question,
+    });
 
     const response = await generateCoachResponse(prompt);
 
