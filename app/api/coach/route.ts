@@ -57,10 +57,10 @@ Return your response as JSON with exactly this structure:
 
     const response = await generateCoachResponse(prompt);
 
-    return NextResponse.json({
-      success: true,
-      response,
-    });
+  return NextResponse.json({
+    success: true,
+    answer: response.answer,
+  });
   } catch (error) {
     console.error("Coach request failed:", error);
 
