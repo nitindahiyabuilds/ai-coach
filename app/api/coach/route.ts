@@ -1,5 +1,9 @@
 import { generateCoachResponse } from "@/lib/ai/client";
 import { buildUserContext } from "@/lib/memory/context";
+import {
+  getCoachMessages,
+  saveCoachMessage,
+} from "@/lib/memory/coach";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -23,7 +27,21 @@ export async function POST(request: Request) {
       );
     }
 
+    const question = parsed.data.question;
+
     const context = await buildUserContext();
+
+    const history = await getCoachMessages(20);
+
+    const conversationHistory =
+      history.length > 0
+        ? history
+            .map(
+              (message) =>
+                `${message.role.toUpperCase()}: ${message.content}`
+            )
+            .join("\n")
+        : "No previous conversation.";
 
     const prompt = `
 You are the AI health coach inside AI OS.
@@ -44,9 +62,15 @@ USER CONTEXT:
 
 ${JSON.stringify(context, null, 2)}
 
-USER QUESTION:
+CONVERSATION HISTORY:
 
-${parsed.data.question}
+${conversationHistory}
+
+CURRENT USER QUESTION:
+
+${question}
+
+Use the conversation history when it is relevant to the current question.
 
 Return your response as JSON with exactly this structure:
 
@@ -57,10 +81,13 @@ Return your response as JSON with exactly this structure:
 
     const response = await generateCoachResponse(prompt);
 
-  return NextResponse.json({
-    success: true,
-    answer: response.answer,
-  });
+    await saveCoachMessage("user", question);
+    await saveCoachMessage("assistant", response.answer);
+
+    return NextResponse.json({
+      success: true,
+      answer: response.answer,
+    });
   } catch (error) {
     console.error("Coach request failed:", error);
 

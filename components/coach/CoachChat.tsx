@@ -7,9 +7,26 @@ type Message = {
   content: string;
 };
 
-export default function CoachChat() {
+type InitialMessage = {
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+};
+
+type CoachChatProps = {
+  initialMessages: InitialMessage[];
+};
+
+export default function CoachChat({
+  initialMessages,
+}: CoachChatProps) {
   const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(
+  initialMessages.map((message) => ({
+    role: message.role,
+    content: message.content,
+  }))
+);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
