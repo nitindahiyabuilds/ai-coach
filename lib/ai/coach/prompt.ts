@@ -1,4 +1,5 @@
 import { COACH_INSTRUCTIONS } from "./instructions";
+import { COACH_RULES } from "./rules";
 
 type BuildCoachPromptParams = {
   context: unknown;
@@ -14,6 +15,8 @@ export function buildCoachPrompt({
   return `
 ${COACH_INSTRUCTIONS}
 
+${COACH_RULES}
+
 USER CONTEXT:
 
 ${JSON.stringify(context, null, 2)}
@@ -26,7 +29,11 @@ CURRENT USER QUESTION:
 
 ${question}
 
-Answer the current question using the available context and conversation history.
+Use the user's context and conversation history when relevant.
+
+Think through the user's situation before answering.
+
+Prioritize the most useful actions.
 
 Return JSON with exactly this structure:
 

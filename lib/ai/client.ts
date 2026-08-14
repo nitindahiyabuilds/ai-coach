@@ -82,40 +82,63 @@ export async function generateHealthExplanation(
 export async function generateCoachResponse(
   prompt: string
 ): Promise<CoachResponse> {
-  const response = await ai.models.generateContent({
-    model: "gemini-3.6-flash",
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "OBJECT",
-        properties: {
-          answer: {
-            type: "STRING",
+  const maxAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              answer: {
+                type: "STRING",
+              },
+            },
+            required: ["answer"],
           },
         },
-        required: ["answer"],
-      },
-    },
-  });
+      });
 
-  if (!response.text) {
-    throw new Error("AI returned an empty response");
+      if (!response.text) {
+        throw new Error("AI returned an empty response");
+      }
+
+      let parsed: unknown;
+
+      try {
+        parsed = JSON.parse(response.text);
+      } catch {
+        throw new Error("AI returned invalid JSON");
+      }
+
+      const result = coachResponseSchema.safeParse(parsed);
+
+      if (!result.success) {
+        throw new Error("AI returned an invalid response structure");
+      }
+
+      return result.data;
+    } catch (error) {
+      const status =
+        typeof error === "object" &&
+        error !== null &&
+        "status" in error
+          ? (error as { status?: number }).status
+          : undefined;
+
+      if (status !== 503 || attempt === maxAttempts) {
+        throw error;
+      }
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, attempt * 1000)
+      );
+    }
   }
 
-  let parsed: unknown;
-
-  try {
-    parsed = JSON.parse(response.text);
-  } catch {
-    throw new Error("AI returned invalid JSON");
-  }
-
-  const result = coachResponseSchema.safeParse(parsed);
-
-  if (!result.success) {
-    throw new Error("AI returned an invalid response structure");
-  }
-
-  return result.data;
+  throw new Error("AI request failed");
 }
