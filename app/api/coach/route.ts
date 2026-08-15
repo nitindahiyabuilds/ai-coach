@@ -5,6 +5,7 @@ import {
   saveCoachMessage,
 } from "@/lib/memory/coach";
 import { buildCoachPrompt } from "@/lib/ai/coach/prompt";
+import { getWorkoutAnalysis } from "@/lib/analysis/workout-service";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -32,10 +33,13 @@ export async function POST(request: Request) {
 
     const context = await buildUserContext();
 
+    const workoutAnalysis = await getWorkoutAnalysis();
+
     const history = await getCoachMessages(20);
 
     const prompt = buildCoachPrompt({
       context,
+      workoutAnalysis,
       history,
       question,
     });
