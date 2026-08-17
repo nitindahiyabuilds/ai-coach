@@ -21,20 +21,23 @@ export type WorkoutSession = {
   workout_sets: WorkoutSet[];
 };
 
+export type ExerciseSessionAnalysis = {
+  session_date: string;
+  sets: WorkoutSet[];
+  total_volume: number;
+  top_set: WorkoutSet | null;
+};
+
 export type ExerciseAnalysis = {
   exercise_name: string;
 
-  latest: {
-    sets: WorkoutSet[];
-    total_volume: number;
-    top_set: WorkoutSet | null;
-  };
+  latest: ExerciseSessionAnalysis;
 
-  previous: {
-    sets: WorkoutSet[];
-    total_volume: number;
-    top_set: WorkoutSet | null;
-  } | null;
+  previous: ExerciseSessionAnalysis | null;
+
+  trend: ExerciseSessionAnalysis[];
+
+  days_since_last_trained: number;
 
   changes: {
     top_weight: number | null;
@@ -49,13 +52,13 @@ export type WorkoutAnalysis = {
   exercises: ExerciseAnalysis[];
 };
 
-function calculateVolume(sets: WorkoutSet[]) {
+function calculateVolume(sets: WorkoutSet[]): number {
   return sets.reduce((total, set) => {
     return total + set.weight * set.reps;
   }, 0);
 }
 
-function getTopSet(sets: WorkoutSet[]) {
+function getTopSet(sets: WorkoutSet[]): WorkoutSet | null {
   if (sets.length === 0) {
     return null;
   }
@@ -71,81 +74,60 @@ function getTopSet(sets: WorkoutSet[]) {
   })[0];
 }
 
-function groupSetsByExercise(sets: WorkoutSet[]) {
-  const groups = new Map<string, WorkoutSet[]>();
+function getExerciseSessions(
+  exerciseName: string,
+  sessions: WorkoutSession[]
+): ExerciseSessionAnalysis[] {
+  const exerciseSessions: ExerciseSessionAnalysis[] = [];
 
-  for (const set of sets) {
-    const existing = groups.get(set.exercise_name) ?? [];
-    existing.push(set);
-    groups.set(set.exercise_name, existing);
+  for (const session of sessions) {
+    const sets = (session.workout_sets ?? []).filter(
+      (set) => set.exercise_name === exerciseName
+    );
+
+    if (sets.length === 0) {
+      continue;
+    }
+
+    exerciseSessions.push({
+      session_date: session.date,
+      sets,
+      total_volume: calculateVolume(sets),
+      top_set: getTopSet(sets),
+    });
   }
 
-  return groups;
+  return exerciseSessions;
 }
 
-function getExerciseNames(
-  latestSets: WorkoutSet[],
-  previousSets: WorkoutSet[]
-) {
+function calculateDaysSinceLastTrained(
+  latestWorkoutDate: string,
+  today = new Date()
+): number {
+  const latestDate = new Date(`${latestWorkoutDate}T00:00:00`);
+
+  const currentDate = new Date(
+    `${today.toISOString().slice(0, 10)}T00:00:00`
+  );
+
+  const differenceMs = currentDate.getTime() - latestDate.getTime();
+
+  return Math.max(
+    0,
+    Math.floor(differenceMs / (1000 * 60 * 60 * 24))
+  );
+}
+
+function getExerciseNames(sessions: WorkoutSession[]): string[] {
   return Array.from(
-    new Set([
-      ...latestSets.map((set) => set.exercise_name),
-      ...previousSets.map((set) => set.exercise_name),
-    ])
+    new Set(
+      sessions.flatMap((session) =>
+        (session.workout_sets ?? []).map(
+          (set) => set.exercise_name
+        )
+      )
+    )
   );
-}
-
-function analyzeExercise(
-  exerciseName: string,
-  latestSets: WorkoutSet[],
-  previousSets: WorkoutSet[]
-): ExerciseAnalysis {
-  const latest = latestSets.filter(
-    (set) => set.exercise_name === exerciseName
-  );
-
-  const previous = previousSets.filter(
-    (set) => set.exercise_name === exerciseName
-  );
-
-  const latestTopSet = getTopSet(latest);
-  const previousTopSet = getTopSet(previous);
-
-  return {
-    exercise_name: exerciseName,
-
-    latest: {
-      sets: latest,
-      total_volume: calculateVolume(latest),
-      top_set: latestTopSet,
-    },
-
-    previous:
-      previous.length > 0
-        ? {
-            sets: previous,
-            total_volume: calculateVolume(previous),
-            top_set: previousTopSet,
-          }
-        : null,
-
-    changes: {
-      top_weight:
-        latestTopSet && previousTopSet
-          ? latestTopSet.weight - previousTopSet.weight
-          : null,
-
-      top_reps:
-        latestTopSet && previousTopSet
-          ? latestTopSet.reps - previousTopSet.reps
-          : null,
-
-      total_volume:
-        previous.length > 0
-          ? calculateVolume(latest) - calculateVolume(previous)
-          : null,
-    },
-  };
 }
 
 export function analyzeWorkoutHistory(
@@ -163,26 +145,76 @@ export function analyzeWorkoutHistory(
   });
 
   const latestSession = sortedSessions[0];
-  const previousSession = sortedSessions[1] ?? null;
 
-  const latestSets = latestSession.workout_sets ?? [];
-  const previousSets = previousSession?.workout_sets ?? [];
+  const previousSession =
+    sortedSessions[1] ?? null;
 
-  const exerciseNames = getExerciseNames(
-    latestSets,
-    previousSets
-  );
+  const exerciseNames =
+    getExerciseNames(sortedSessions);
 
-  const latestByExercise = groupSetsByExercise(latestSets);
-  const previousByExercise = groupSetsByExercise(previousSets);
+  const exercises: ExerciseAnalysis[] = [];
 
-  const exercises = exerciseNames.map((exerciseName) => {
-    return analyzeExercise(
-      exerciseName,
-      latestByExercise.get(exerciseName) ?? [],
-      previousByExercise.get(exerciseName) ?? []
-    );
-  });
+  for (const exerciseName of exerciseNames) {
+    const exerciseSessions =
+      getExerciseSessions(
+        exerciseName,
+        sortedSessions
+      );
+
+    const latest =
+      exerciseSessions[0];
+
+    if (!latest) {
+      continue;
+    }
+
+    const previous: ExerciseSessionAnalysis | null =
+      exerciseSessions[1] ?? null;
+
+    const trend =
+      exerciseSessions.slice(0, 3);
+
+    const topWeightChange =
+      latest.top_set && previous?.top_set
+        ? latest.top_set.weight -
+          previous.top_set.weight
+        : null;
+
+    const topRepsChange =
+      latest.top_set && previous?.top_set
+        ? latest.top_set.reps -
+          previous.top_set.reps
+        : null;
+
+    const totalVolumeChange =
+      previous
+        ? latest.total_volume -
+          previous.total_volume
+        : null;
+
+    const exerciseAnalysis: ExerciseAnalysis = {
+      exercise_name: exerciseName,
+
+      latest,
+
+      previous,
+
+      trend,
+
+      days_since_last_trained:
+        calculateDaysSinceLastTrained(
+          latest.session_date
+        ),
+
+      changes: {
+        top_weight: topWeightChange,
+        top_reps: topRepsChange,
+        total_volume: totalVolumeChange,
+      },
+    };
+
+    exercises.push(exerciseAnalysis);
+  }
 
   return {
     latest_session: latestSession,
