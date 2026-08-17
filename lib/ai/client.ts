@@ -6,6 +6,11 @@ import {
   type HealthExplanation,
 } from "./schema";
 
+import {
+  workoutPlanReasoningSchema,
+  type WorkoutPlanReasoning,
+} from "./coach/workout-plan";
+
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
@@ -141,4 +146,88 @@ export async function generateCoachResponse(
   }
 
   throw new Error("AI request failed");
+}
+
+export async function generateWorkoutPlanReasoning(
+  prompt: string
+): Promise<WorkoutPlanReasoning> {
+  const maxAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              exercises: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    exerciseName: {
+                      type: "STRING",
+                    },
+                    reasoning: {
+                      type: "STRING",
+                    },
+                  },
+                  required: [
+                    "exerciseName",
+                    "reasoning",
+                  ],
+                },
+              },
+            },
+            required: ["exercises"],
+          },
+        },
+      });
+
+      if (!response.text) {
+        throw new Error("AI returned an empty response");
+      }
+
+      let parsed: unknown;
+
+      try {
+        parsed = JSON.parse(response.text);
+      } catch {
+        throw new Error("AI returned invalid JSON");
+      }
+
+      const result =
+        workoutPlanReasoningSchema.safeParse(parsed);
+
+      if (!result.success) {
+        throw new Error(
+          "AI returned an invalid workout plan reasoning structure"
+        );
+      }
+
+      return result.data;
+    } catch (error) {
+      const status =
+        typeof error === "object" &&
+        error !== null &&
+        "status" in error
+          ? (error as { status?: number }).status
+          : undefined;
+
+      if (status !== 503 || attempt === maxAttempts) {
+        throw error;
+      }
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, attempt * 1000)
+      );
+    }
+  }
+
+  throw new Error(
+    "Workout plan reasoning request failed"
+  );
 }
