@@ -1,6 +1,27 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import WorkoutPlanCard from "./WorkoutPlanCard";
+
+type WorkoutPlanExercise = {
+  exerciseName: string;
+  sets: number;
+  reps: number;
+  weight: number;
+  decision: "progress" | "hold" | "deload";
+  reasonCode:
+    | "progressed"
+    | "maintain_after_decline"
+    | "deload_after_repeated_decline"
+    | "recent_return"
+    | "insufficient_history";
+  daysSinceLastTrained: number;
+  reasoning?: string;
+};
+
+type WorkoutPlan = {
+  exercises: WorkoutPlanExercise[];
+};
 
 type Message = {
   role: "user" | "assistant";
@@ -13,6 +34,13 @@ type InitialMessage = {
   created_at: string;
 };
 
+type CoachResponse = {
+  success: boolean;
+  answer?: string;
+  workoutPlan?: WorkoutPlan | null;
+  message?: string;
+};
+
 type CoachChatProps = {
   initialMessages: InitialMessage[];
 };
@@ -21,16 +49,23 @@ export default function CoachChat({
   initialMessages,
 }: CoachChatProps) {
   const [question, setQuestion] = useState("");
+
   const [messages, setMessages] = useState<Message[]>(
-  initialMessages.map((message) => ({
-    role: message.role,
-    content: message.content,
-  }))
-);
+    initialMessages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    }))
+  );
+
+  const [workoutPlan, setWorkoutPlan] =
+    useState<WorkoutPlan | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
     const trimmedQuestion = question.trim();
@@ -46,7 +81,11 @@ export default function CoachChat({
       content: trimmedQuestion,
     };
 
-    setMessages((current) => [...current, userMessage]);
+    setMessages((current) => [
+      ...current,
+      userMessage,
+    ]);
+
     setQuestion("");
     setLoading(true);
 
@@ -61,14 +100,20 @@ export default function CoachChat({
         }),
       });
 
-      const data = await response.json();
+      const data: CoachResponse =
+        await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong");
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Something went wrong."
+        );
       }
 
       if (!data.answer) {
-        throw new Error("The coach returned an empty response");
+        throw new Error(
+          "The coach returned an empty response."
+        );
       }
 
       const assistantMessage: Message = {
@@ -76,7 +121,19 @@ export default function CoachChat({
         content: data.answer,
       };
 
-      setMessages((current) => [...current, assistantMessage]);
+      setMessages((current) => [
+        ...current,
+        assistantMessage,
+      ]);
+
+      if (
+        data.workoutPlan &&
+        data.workoutPlan.exercises.length > 0
+      ) {
+        setWorkoutPlan(data.workoutPlan);
+      } else {
+        setWorkoutPlan(null);
+      }
     } catch (err) {
       setError(
         err instanceof Error
@@ -94,9 +151,12 @@ export default function CoachChat({
         {messages.length === 0 ? (
           <div className="flex min-h-[360px] items-center justify-center text-center">
             <div>
-              <h2 className="text-lg font-semibold">Ask your coach</h2>
+              <h2 className="text-lg font-semibold">
+                Ask your coach
+              </h2>
+
               <p className="mt-2 text-sm text-muted-foreground">
-                Try asking: “What should I focus on to build muscle?”
+                Try asking: “Give me my next workout.”
               </p>
             </div>
           </div>
@@ -134,17 +194,26 @@ export default function CoachChat({
         )}
       </div>
 
+      {workoutPlan && (
+        <WorkoutPlanCard plan={workoutPlan} />
+      )}
+
       {error && (
         <div className="rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-500">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex gap-3">
+      <form
+        onSubmit={handleSubmit}
+        className="flex gap-3"
+      >
         <input
           type="text"
           value={question}
-          onChange={(event) => setQuestion(event.target.value)}
+          onChange={(event) =>
+            setQuestion(event.target.value)
+          }
           placeholder="Ask your health coach..."
           disabled={loading}
           className="flex-1 rounded-lg border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
@@ -152,7 +221,9 @@ export default function CoachChat({
 
         <button
           type="submit"
-          disabled={loading || !question.trim()}
+          disabled={
+            loading || !question.trim()
+          }
           className="rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? "Sending..." : "Send"}

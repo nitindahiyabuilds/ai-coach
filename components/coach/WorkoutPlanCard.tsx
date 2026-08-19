@@ -6,6 +6,13 @@ type WorkoutPlanExercise = {
   reps: number;
   weight: number;
   decision: "progress" | "hold" | "deload";
+  reasonCode:
+    | "progressed"
+    | "maintain_after_decline"
+    | "deload_after_repeated_decline"
+    | "recent_return"
+    | "insufficient_history";
+  daysSinceLastTrained: number;
   reasoning?: string;
 };
 
@@ -27,7 +34,10 @@ export default function WorkoutPlanCard({
   return (
     <div className="space-y-4 rounded-xl border bg-background p-5">
       <div>
-        <h2 className="text-lg font-semibold">Your Next Workout</h2>
+        <h2 className="text-lg font-semibold">
+          Your Next Workout
+        </h2>
+
         <p className="mt-1 text-sm text-muted-foreground">
           Based on your recent training history.
         </p>
@@ -50,7 +60,8 @@ export default function WorkoutPlanCard({
                 </p>
 
                 <p className="text-sm text-muted-foreground">
-                  {exercise.sets} sets × {exercise.reps} reps
+                  {exercise.sets} sets ×{" "}
+                  {exercise.reps} reps
                 </p>
               </div>
 
@@ -58,6 +69,16 @@ export default function WorkoutPlanCard({
                 {exercise.decision}
               </span>
             </div>
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              Last trained{" "}
+              {exercise.daysSinceLastTrained}{" "}
+              day
+              {exercise.daysSinceLastTrained === 1
+                ? ""
+                : "s"}{" "}
+              ago.
+            </p>
 
             {exercise.reasoning && (
               <div className="mt-4 rounded-md border bg-background p-3">
