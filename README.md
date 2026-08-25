@@ -1,6 +1,6 @@
 ## Current Checkpoint
 
-AI OS is currently focused on building a history-aware AI coaching system.
+AI OS is currently focused on building a personalised AI coaching system.
 
 The current workout intelligence pipeline is:
 
