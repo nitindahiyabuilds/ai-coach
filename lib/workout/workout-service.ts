@@ -6,7 +6,7 @@ import {
   analyzeWorkoutHistory,
   type WorkoutAnalysis,
   type WorkoutSession,
-} from "@/lib/analysis/workout";
+} from "@/lib/workout/workout";
 
 export async function getWorkoutAnalysis(): Promise<WorkoutAnalysis | null> {
   const user = await getCurrentUser();

@@ -1,6 +1,6 @@
 import { COACH_INSTRUCTIONS } from "./instructions";
 import { COACH_RULES } from "./rules";
-import type { WorkoutAnalysis } from "@/lib/analysis/workout";
+import type { WorkoutAnalysis } from "@/lib/workout/workout";
 
 type BuildCoachPromptParams = {
   context: unknown;

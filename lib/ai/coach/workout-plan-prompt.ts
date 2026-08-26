@@ -1,4 +1,4 @@
-import type { WorkoutPlan } from "@/lib/analysis/workout-plan";
+import type { WorkoutPlan } from "@/lib/planning/workout-plan";
 
 type BuildWorkoutPlanPromptParams = {
   plan: WorkoutPlan;

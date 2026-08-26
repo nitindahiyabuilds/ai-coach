@@ -1,4 +1,4 @@
-import type { ExerciseAnalysis } from "./workout";
+import type { ExerciseAnalysis } from "@/lib/workout/workout";
 
 export type ProgressionDecision =
   | "progress"

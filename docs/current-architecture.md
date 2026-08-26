@@ -26,7 +26,7 @@ Row Level Security is enabled and users can only access their own workout data.
 
 ## Workout analysis
 
-`lib/analysis/workout.ts`
+`lib/workout/workout.ts`
 
 The analysis layer derives:
 
@@ -46,7 +46,7 @@ These values are computed deterministically from stored workout data.
 
 ## Progression
 
-`lib/analysis/progression.ts`
+`lib/planning/progression.ts`
 
 The progression layer determines the recommended:
 
@@ -61,7 +61,7 @@ The LLM does not determine workout numbers.
 
 ## Workout plan
 
-`lib/analysis/workout-plan.ts`
+`lib/planning/workout-plan.ts`
 
 The deterministic progression output is converted into a structured workout plan.
 

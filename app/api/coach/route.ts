@@ -7,8 +7,8 @@ import {
 } from "@/lib/memory/coach";
 import { buildCoachPrompt } from "@/lib/ai/coach/prompt";
 import { buildWorkoutPlanPrompt } from "@/lib/ai/coach/workout-plan-prompt";
-import { getWorkoutAnalysis } from "@/lib/analysis/workout-service";
-import { generateWorkoutPlan } from "@/lib/analysis/workout-plan";
+import { getWorkoutAnalysis } from "@/lib/workout/workout-service";
+import { generateWorkoutPlan } from "@/lib/planning/workout-plan";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 

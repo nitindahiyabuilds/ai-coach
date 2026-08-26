@@ -1,4 +1,4 @@
-import type { WorkoutAnalysis } from "./workout";
+import type { WorkoutAnalysis } from "@/lib/workout/workout";
 import {
   generateWorkoutRecommendation,
   type ProgressionDecision,
