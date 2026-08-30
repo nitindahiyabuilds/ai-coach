@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI OS",
-  description: "AI-powered lifestyle operating system",
+  title: "AI Coach",
+  description: "AI-powered health and lifestyle coaching",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

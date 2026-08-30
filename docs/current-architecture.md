@@ -1,8 +1,8 @@
-# AI OS — Current Engineering Checkpoint
+# AI Coach — Current Engineering Checkpoint
 
 ## What exists today
 
-AI OS currently has a history-aware AI health/fitness coach.
+AI Coach currently has a history-aware AI health/fitness coach.
 
 The current workout intelligence pipeline is:
 

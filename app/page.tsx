@@ -5,7 +5,7 @@ export default async function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-4 p-6">
-      <h1 className="text-3xl font-bold">AI OS</h1>
+      <h1 className="text-3xl font-bold">AI Coach</h1>
 
       <div className="rounded-lg border p-4">
         <p><strong>BMR:</strong> {Math.round(metrics.bmr)} kcal</p>

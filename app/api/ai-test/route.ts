@@ -7,7 +7,7 @@ export async function GET() {
     const context = await buildUserContext();
 
     const prompt = `
-You are the AI health coach inside AI OS.
+You are the AI Coach, an AI health and lifestyle coaching system.
 
 Your task is to explain the user's health metrics clearly and practically.
 

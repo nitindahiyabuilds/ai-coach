@@ -1,12 +1,12 @@
-# AI OS
+# AI Coach
 
-AI OS is an AI-powered lifestyle coaching system built around one core idea:
+AI Coach is an AI-powered lifestyle coaching system built around one core idea:
 
 > Personalized coaching becomes significantly more useful when an AI understands what a user has actually done over time.
 
 The project currently focuses on fitness and training, with the broader vision of eventually supporting nutrition, habits, routines, and other aspects of everyday life.
 
-Rather than treating the LLM as the entire product, AI OS builds a structured intelligence layer around it.
+Rather than treating the LLM as the entire product, AI Coach builds a structured intelligence layer around it.
 
 ## How It Works
 
@@ -32,7 +32,7 @@ The interesting problem is different:
 
 **Can the system understand the individual user?**
 
-AI OS is designed around longitudinal context such as:
+AI Coach is designed around longitudinal context such as:
 
 - what the user has trained
 - how their performance has changed
@@ -51,7 +51,7 @@ That feedback loop is the foundation of the system.
 
 ## Engineering Philosophy
 
-AI OS deliberately separates three layers of information:
+AI Coach deliberately separates three layers of information:
 
 ### Raw Data
 
@@ -81,7 +81,7 @@ This architecture keeps the system more predictable, testable, auditable, and ea
 
 ## Current Technology
 
-AI OS is built as a web application using:
+AI Coach is built as a web application using:
 
 - Next.js
 - TypeScript
@@ -106,9 +106,9 @@ Once the core workout intelligence loop is properly validated and hardened, the 
 
 The long-term vision is a system that gradually develops a structured understanding of the person using it — while keeping raw data, deterministic analysis, and AI reasoning clearly separated.
 
-AI OS is therefore less about building another chatbot and more about exploring how **memory, structured data, deterministic intelligence, and LLM reasoning can work together to create genuinely personalized software.**
+AI Coach is therefore less about building another chatbot and more about exploring how **memory, structured data, deterministic intelligence, and LLM reasoning can work together to create genuinely personalized software.**
 :::
 
-This is the version I'd push today. It describes **what AI OS is, why it exists, how it thinks, and how it's engineered** without tying the README to today's particular checkpoint.
+This is the version I'd push today. It describes **what AI Coach is, why it exists, how it thinks, and how it's engineered** without tying the README to today's particular checkpoint.
 
 Then tomorrow we start properly from the repository inspection and continue the workout-intelligence milestone.
