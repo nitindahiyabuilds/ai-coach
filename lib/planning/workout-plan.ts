@@ -17,6 +17,7 @@ export type WorkoutPlanExercise = {
     | "recent_return"
     | "insufficient_history";
   daysSinceLastTrained: number;
+  reasoning?: string;
 };
 
 export type WorkoutPlan = {

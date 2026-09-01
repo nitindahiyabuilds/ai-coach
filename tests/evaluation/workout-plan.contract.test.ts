@@ -45,6 +45,15 @@ describe("workout plan evaluation contract", () => {
 
     const plan = generateWorkoutPlan(analysis!);
 
+    const daysSinceLastTrained = Math.max(
+      0,
+      Math.floor(
+        (new Date("2026-09-01T00:00:00Z").getTime() -
+          new Date("2026-08-20T00:00:00Z").getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    );
+
     expect(plan.exercises).toHaveLength(2);
     expect(plan.exercises).toEqual([
       {
@@ -54,7 +63,7 @@ describe("workout plan evaluation contract", () => {
         weight: 82.5,
         decision: "progress",
         reasonCode: "progressed",
-        daysSinceLastTrained: 10,
+        daysSinceLastTrained,
       },
       {
         exerciseName: "Squat",
@@ -63,7 +72,7 @@ describe("workout plan evaluation contract", () => {
         weight: 97.5,
         decision: "progress",
         reasonCode: "progressed",
-        daysSinceLastTrained: 10,
+        daysSinceLastTrained,
       },
     ]);
   });

@@ -133,11 +133,15 @@ function getExerciseNames(sessions: WorkoutSession[]): string[] {
 export function analyzeWorkoutHistory(
   sessions: WorkoutSession[]
 ): WorkoutAnalysis | null {
-  if (sessions.length === 0) {
+  const completedSessions = sessions.filter(
+    (session) => session.completed_at !== null
+  );
+
+  if (completedSessions.length === 0) {
     return null;
   }
 
-  const sortedSessions = [...sessions].sort((a, b) => {
+  const sortedSessions = [...completedSessions].sort((a, b) => {
     return (
       new Date(b.date).getTime() -
       new Date(a.date).getTime()

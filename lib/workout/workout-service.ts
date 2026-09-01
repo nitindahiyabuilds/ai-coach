@@ -42,6 +42,7 @@ export async function getWorkoutAnalysis(): Promise<WorkoutAnalysis | null> {
       `
     )
     .eq("user_id", user.id)
+    .not("completed_at", "is", null)
     .order("date", { ascending: false });
 
   if (error) {

@@ -29,12 +29,29 @@ export async function createWorkoutSession(
   }
 
   const supabase = await createClient();
+  const targetDate =
+    input.date ?? new Date().toISOString().slice(0, 10);
+
+  const { data: existingSession, error: existingError } =
+    await supabase
+      .from("workout_sessions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("date", targetDate)
+      .is("completed_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+  if (!existingError && existingSession) {
+    return existingSession;
+  }
 
   const { data, error } = await supabase
     .from("workout_sessions")
     .insert({
       user_id: user.id,
-      date: input.date,
+      date: targetDate,
       started_at: input.started_at,
       notes: input.notes,
     })

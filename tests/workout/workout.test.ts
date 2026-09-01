@@ -188,4 +188,33 @@ describe("analyzeWorkoutHistory", () => {
     expect(bench?.latest.top_set?.weight).toBe(80);
     expect(squat?.latest.top_set?.weight).toBe(100);
   });
+
+  it("ignores incomplete sessions when calculating workout history", () => {
+    const complete = createSession("2026-08-20", [
+      createSet({
+        weight: 80,
+        reps: 8,
+      }),
+    ]);
+
+    const incomplete = createSession("2026-08-21", [
+      createSet({
+        weight: 60,
+        reps: 10,
+      }),
+    ]);
+
+    incomplete.completed_at = null;
+
+    const analysis = analyzeWorkoutHistory([
+      incomplete,
+      complete,
+    ]);
+
+    expect(analysis?.latest_session.id).toBe(complete.id);
+    expect(analysis?.latest_session.completed_at).toBe(
+      complete.completed_at
+    );
+    expect(analysis?.exercises[0].latest.total_volume).toBe(640);
+  });
 });
