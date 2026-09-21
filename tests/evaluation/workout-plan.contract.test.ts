@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { analyzeWorkoutHistory } from "@/lib/workout/workout";
 import { generateWorkoutPlan } from "@/lib/planning/workout-plan";
-
 function createSession(
   date: string,
   exerciseName: string,
@@ -31,20 +30,29 @@ function createSession(
     ],
   };
 }
-
+afterEach(() => {
+  vi.useRealTimers();
+});
 describe("workout plan evaluation contract", () => {
   it("preserves the deterministic recommendation exactly in the generated plan", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-01T00:00:00Z"));
     const analysis = analyzeWorkoutHistory([
       createSession("2026-08-17", "Bench Press", 77.5, 8),
       createSession("2026-08-20", "Bench Press", 80, 8),
       createSession("2026-08-17", "Squat", 100, 5),
       createSession("2026-08-20", "Squat", 95, 5),
     ]);
-
     expect(analysis).not.toBeNull();
-
     const plan = generateWorkoutPlan(analysis!);
-
+    const daysSinceLastTrained = Math.max(
+      0,
+      Math.floor(
+        (new Date("2026-09-01T00:00:00Z").getTime() -
+          new Date("2026-08-20T00:00:00Z").getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    );
     expect(plan.exercises).toHaveLength(2);
     expect(plan.exercises).toEqual([
       {
@@ -54,7 +62,7 @@ describe("workout plan evaluation contract", () => {
         weight: 82.5,
         decision: "progress",
         reasonCode: "progressed",
-        daysSinceLastTrained: 10,
+        daysSinceLastTrained,
       },
       {
         exerciseName: "Squat",
@@ -63,7 +71,7 @@ describe("workout plan evaluation contract", () => {
         weight: 97.5,
         decision: "progress",
         reasonCode: "progressed",
-        daysSinceLastTrained: 10,
+        daysSinceLastTrained,
       },
     ]);
   });

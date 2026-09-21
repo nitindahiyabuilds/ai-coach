@@ -22,10 +22,14 @@ type WorkoutPlan = {
 
 type WorkoutPlanCardProps = {
   plan: WorkoutPlan;
+  onStartWorkout?: () => void;
+  startingWorkout?: boolean;
 };
 
 export default function WorkoutPlanCard({
   plan,
+  onStartWorkout,
+  startingWorkout = false,
 }: WorkoutPlanCardProps) {
   if (!plan.exercises.length) {
     return null;
@@ -42,6 +46,19 @@ export default function WorkoutPlanCard({
           Based on your recent training history.
         </p>
       </div>
+
+      {onStartWorkout && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onStartWorkout}
+            disabled={startingWorkout}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {startingWorkout ? "Starting..." : "Start workout"}
+          </button>
+        </div>
+      )}
 
       <div className="space-y-3">
         {plan.exercises.map((exercise) => (
@@ -63,22 +80,25 @@ export default function WorkoutPlanCard({
                   {exercise.sets} sets ×{" "}
                   {exercise.reps} reps
                 </p>
+
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Reason: {exercise.reasonCode}
+                </p>
+
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Last trained {exercise.daysSinceLastTrained}{" "}
+                  day
+                  {exercise.daysSinceLastTrained === 1
+                    ? ""
+                    : "s"}{" "}
+                  ago.
+                </p>
               </div>
 
               <span className="rounded-full border px-3 py-1 text-xs font-medium capitalize">
                 {exercise.decision}
               </span>
             </div>
-
-            <p className="mt-3 text-xs text-muted-foreground">
-              Last trained{" "}
-              {exercise.daysSinceLastTrained}{" "}
-              day
-              {exercise.daysSinceLastTrained === 1
-                ? ""
-                : "s"}{" "}
-              ago.
-            </p>
 
             {exercise.reasoning && (
               <div className="mt-4 rounded-md border bg-background p-3">

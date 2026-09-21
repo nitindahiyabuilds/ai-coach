@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createWorkoutSession } from "@/lib/workout/actions";
 import WorkoutPlanCard from "./WorkoutPlanCard";
 
 type WorkoutPlanExercise = {
@@ -48,6 +50,7 @@ type CoachChatProps = {
 export default function CoachChat({
   initialMessages,
 }: CoachChatProps) {
+  const router = useRouter();
   const [question, setQuestion] = useState("");
 
   const [messages, setMessages] = useState<Message[]>(
@@ -62,6 +65,34 @@ export default function CoachChat({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [startingWorkout, setStartingWorkout] = useState(false);
+
+  async function handleStartWorkout() {
+    if (startingWorkout || !workoutPlan) {
+      return;
+    }
+
+    setStartingWorkout(true);
+    setError("");
+
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const session = await createWorkoutSession({
+        date: today,
+        started_at: new Date().toISOString(),
+      });
+
+      router.push(`/workout/${session.id}`);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to start the workout session."
+      );
+    } finally {
+      setStartingWorkout(false);
+    }
+  }
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -195,7 +226,11 @@ export default function CoachChat({
       </div>
 
       {workoutPlan && (
-        <WorkoutPlanCard plan={workoutPlan} />
+        <WorkoutPlanCard
+          plan={workoutPlan}
+          onStartWorkout={handleStartWorkout}
+          startingWorkout={startingWorkout}
+        />
       )}
 
       {error && (

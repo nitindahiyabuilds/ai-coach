@@ -1,81 +1,39 @@
-import { GoogleGenAI } from "@google/genai";
 import {
   coachResponseSchema,
   healthExplanationSchema,
   type CoachResponse,
   type HealthExplanation,
 } from "./schema";
-
 import {
   workoutPlanReasoningSchema,
   type WorkoutPlanReasoning,
 } from "./coach/workout-plan";
+import { createAIProvider } from "./provider-factory";
 
-const apiKey = process.env.GEMINI_API_KEY;
-
-if (!apiKey) {
-  throw new Error("GEMINI_API_KEY is not configured");
-}
-
-const ai = new GoogleGenAI({
-  apiKey,
-});
+const aiProvider = createAIProvider();
 
 export async function generateHealthExplanation(
-  prompt: string
+  prompt: string,
 ): Promise<HealthExplanation> {
-  const response = await ai.models.generateContent({
-    model: "gemini-3.6-flash",
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "OBJECT",
-        properties: {
-          summary: {
-            type: "STRING",
-          },
-          bmr: {
-            type: "STRING",
-          },
-          tdee: {
-            type: "STRING",
-          },
-          calories: {
-            type: "STRING",
-          },
-          protein: {
-            type: "STRING",
-          },
-          water: {
-            type: "STRING",
-          },
-        },
-        required: [
-          "summary",
-          "bmr",
-          "tdee",
-          "calories",
-          "protein",
-          "water",
-        ],
+  const response = await aiProvider.generateStructuredResponse({
+    prompt,
+    schemaName: "health_explanation",
+    schema: {
+      type: "object",
+      properties: {
+        summary: { type: "string" },
+        bmr: { type: "string" },
+        tdee: { type: "string" },
+        calories: { type: "string" },
+        protein: { type: "string" },
+        water: { type: "string" },
       },
+      required: ["summary", "bmr", "tdee", "calories", "protein", "water"],
+      additionalProperties: false,
     },
   });
 
-  if (!response.text) {
-    throw new Error("AI returned an empty response");
-  }
-
-  let parsed: unknown;
-
-  try {
-    parsed = JSON.parse(response.text);
-  } catch {
-    throw new Error("AI returned invalid JSON");
-  }
-
-  const result = healthExplanationSchema.safeParse(parsed);
+  const result = healthExplanationSchema.safeParse(response);
 
   if (!result.success) {
     throw new Error("AI returned an invalid response structure");
@@ -85,42 +43,26 @@ export async function generateHealthExplanation(
 }
 
 export async function generateCoachResponse(
-  prompt: string
+  prompt: string,
 ): Promise<CoachResponse> {
   const maxAttempts = 3;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              answer: {
-                type: "STRING",
-              },
-            },
-            required: ["answer"],
+      const response = await aiProvider.generateStructuredResponse({
+        prompt,
+        schemaName: "coach_response",
+        schema: {
+          type: "object",
+          properties: {
+            answer: { type: "string" },
           },
+          required: ["answer"],
+          additionalProperties: false,
         },
       });
 
-      if (!response.text) {
-        throw new Error("AI returned an empty response");
-      }
-
-      let parsed: unknown;
-
-      try {
-        parsed = JSON.parse(response.text);
-      } catch {
-        throw new Error("AI returned invalid JSON");
-      }
-
-      const result = coachResponseSchema.safeParse(parsed);
+      const result = coachResponseSchema.safeParse(response);
 
       if (!result.success) {
         throw new Error("AI returned an invalid response structure");
@@ -129,9 +71,7 @@ export async function generateCoachResponse(
       return result.data;
     } catch (error) {
       const status =
-        typeof error === "object" &&
-        error !== null &&
-        "status" in error
+        typeof error === "object" && error !== null && "status" in error
           ? (error as { status?: number }).status
           : undefined;
 
@@ -139,9 +79,7 @@ export async function generateCoachResponse(
         throw error;
       }
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, attempt * 1000)
-      );
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
     }
   }
 
@@ -149,71 +87,48 @@ export async function generateCoachResponse(
 }
 
 export async function generateWorkoutPlanReasoning(
-  prompt: string
+  prompt: string,
 ): Promise<WorkoutPlanReasoning> {
   const maxAttempts = 3;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              exercises: {
-                type: "ARRAY",
-                items: {
-                  type: "OBJECT",
-                  properties: {
-                    exerciseName: {
-                      type: "STRING",
-                    },
-                    reasoning: {
-                      type: "STRING",
-                    },
-                  },
-                  required: [
-                    "exerciseName",
-                    "reasoning",
-                  ],
+      const response = await aiProvider.generateStructuredResponse({
+        prompt,
+        schemaName: "workout_plan_reasoning",
+        schema: {
+          type: "object",
+          properties: {
+            exercises: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  exerciseName: { type: "string" },
+                  reasoning: { type: "string" },
                 },
+                required: ["exerciseName", "reasoning"],
+                additionalProperties: false,
               },
             },
-            required: ["exercises"],
           },
+          required: ["exercises"],
+          additionalProperties: false,
         },
       });
 
-      if (!response.text) {
-        throw new Error("AI returned an empty response");
-      }
-
-      let parsed: unknown;
-
-      try {
-        parsed = JSON.parse(response.text);
-      } catch {
-        throw new Error("AI returned invalid JSON");
-      }
-
-      const result =
-        workoutPlanReasoningSchema.safeParse(parsed);
+      const result = workoutPlanReasoningSchema.safeParse(response);
 
       if (!result.success) {
         throw new Error(
-          "AI returned an invalid workout plan reasoning structure"
+          "AI returned an invalid workout plan reasoning structure",
         );
       }
 
       return result.data;
     } catch (error) {
       const status =
-        typeof error === "object" &&
-        error !== null &&
-        "status" in error
+        typeof error === "object" && error !== null && "status" in error
           ? (error as { status?: number }).status
           : undefined;
 
@@ -221,13 +136,9 @@ export async function generateWorkoutPlanReasoning(
         throw error;
       }
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, attempt * 1000)
-      );
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
     }
   }
 
-  throw new Error(
-    "Workout plan reasoning request failed"
-  );
+  throw new Error("Workout plan reasoning request failed");
 }

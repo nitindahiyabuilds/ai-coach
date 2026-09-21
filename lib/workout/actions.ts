@@ -29,12 +29,29 @@ export async function createWorkoutSession(
   }
 
   const supabase = await createClient();
+  const targetDate =
+    input.date ?? new Date().toISOString().slice(0, 10);
+
+  const { data: existingSession, error: existingError } =
+    await supabase
+      .from("workout_sessions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("date", targetDate)
+      .is("completed_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+  if (!existingError && existingSession) {
+    return existingSession;
+  }
 
   const { data, error } = await supabase
     .from("workout_sessions")
     .insert({
       user_id: user.id,
-      date: input.date,
+      date: targetDate,
       started_at: input.started_at,
       notes: input.notes,
     })
@@ -98,6 +115,21 @@ export async function completeWorkoutSession(sessionId: string) {
 
   const supabase = await createClient();
 
+  const { data: session, error: sessionError } = await supabase
+    .from("workout_sessions")
+    .select("id, completed_at")
+    .eq("id", sessionId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (sessionError || !session) {
+    throw new Error("Workout session not found");
+  }
+
+  if (session.completed_at !== null) {
+    throw new Error("Workout session already completed");
+  }
+
   const { data, error } = await supabase
     .from("workout_sessions")
     .update({
@@ -105,11 +137,12 @@ export async function completeWorkoutSession(sessionId: string) {
     })
     .eq("id", sessionId)
     .eq("user_id", user.id)
+    .is("completed_at", null)
     .select()
     .single();
 
-  if (error) {
-    throw new Error(error.message);
+  if (error || !data) {
+    throw new Error("Unable to complete workout session");
   }
 
   return data;
