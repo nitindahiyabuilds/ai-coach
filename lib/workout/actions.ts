@@ -115,6 +115,21 @@ export async function completeWorkoutSession(sessionId: string) {
 
   const supabase = await createClient();
 
+  const { data: session, error: sessionError } = await supabase
+    .from("workout_sessions")
+    .select("id, completed_at")
+    .eq("id", sessionId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (sessionError || !session) {
+    throw new Error("Workout session not found");
+  }
+
+  if (session.completed_at !== null) {
+    throw new Error("Workout session already completed");
+  }
+
   const { data, error } = await supabase
     .from("workout_sessions")
     .update({
@@ -122,11 +137,12 @@ export async function completeWorkoutSession(sessionId: string) {
     })
     .eq("id", sessionId)
     .eq("user_id", user.id)
+    .is("completed_at", null)
     .select()
     .single();
 
-  if (error) {
-    throw new Error(error.message);
+  if (error || !data) {
+    throw new Error("Unable to complete workout session");
   }
 
   return data;

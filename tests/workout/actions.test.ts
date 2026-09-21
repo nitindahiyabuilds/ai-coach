@@ -12,6 +12,7 @@ import { getCurrentUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import {
   addWorkoutSet,
+  completeWorkoutSession,
   createWorkoutSession,
   getWorkoutSession,
 } from "@/lib/workout/actions";
@@ -134,14 +135,17 @@ describe("workout session actions", () => {
       weight: 80,
       reps: 8,
     });
+
     expect(sessionQuery.eq).toHaveBeenCalledWith(
       "id",
       "session-123"
     );
+
     expect(sessionQuery.eq).toHaveBeenCalledWith(
       "user_id",
       "user-1"
     );
+
     expect(insertQuery.insert).toHaveBeenCalled();
   });
 
@@ -171,6 +175,7 @@ describe("workout session actions", () => {
     });
 
     const fromMock = vi.fn().mockReturnValue(sessionQuery);
+
     vi.mocked(createClient).mockResolvedValue({
       from: fromMock,
     } as never);
@@ -187,13 +192,174 @@ describe("workout session actions", () => {
         }),
       ],
     });
+
     expect(sessionQuery.eq).toHaveBeenCalledWith(
       "id",
       "session-123"
     );
+
     expect(sessionQuery.eq).toHaveBeenCalledWith(
       "user_id",
       "user-1"
     );
+  });
+
+  it("rejects completion when the user is unauthenticated", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
+
+    await expect(
+      completeWorkoutSession("session-123")
+    ).rejects.toThrow("Unauthorized");
+
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects completion when the workout session does not exist or is not owned by the user", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as never);
+
+    const sessionQuery = createQuery();
+
+    sessionQuery.single.mockResolvedValue({
+      data: null,
+      error: {
+        message: "No rows found",
+      },
+    });
+
+    const fromMock = vi.fn().mockReturnValue(sessionQuery);
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: fromMock,
+    } as never);
+
+    await expect(
+      completeWorkoutSession("session-123")
+    ).rejects.toThrow("Workout session not found");
+
+    expect(sessionQuery.eq).toHaveBeenCalledWith(
+      "id",
+      "session-123"
+    );
+
+    expect(sessionQuery.eq).toHaveBeenCalledWith(
+      "user_id",
+      "user-1"
+    );
+
+    expect(sessionQuery.update).not.toHaveBeenCalled();
+  });
+
+  it("completes an active workout session", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as never);
+
+    const sessionQuery = createQuery();
+
+    sessionQuery.single.mockResolvedValue({
+      data: {
+        id: "session-123",
+        completed_at: null,
+      },
+      error: null,
+    });
+
+    const updateQuery = createQuery();
+
+    updateQuery.single.mockResolvedValue({
+      data: {
+        id: "session-123",
+        user_id: "user-1",
+        completed_at: "2026-09-21T14:00:00.000Z",
+      },
+      error: null,
+    });
+
+    const fromMock = vi
+      .fn()
+      .mockReturnValueOnce(sessionQuery)
+      .mockReturnValueOnce(updateQuery);
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: fromMock,
+    } as never);
+
+    const completedSession =
+      await completeWorkoutSession("session-123");
+
+    expect(completedSession).toMatchObject({
+      id: "session-123",
+      user_id: "user-1",
+      completed_at: "2026-09-21T14:00:00.000Z",
+    });
+
+    expect(sessionQuery.select).toHaveBeenCalledWith(
+      "id, completed_at"
+    );
+
+    expect(sessionQuery.eq).toHaveBeenCalledWith(
+      "id",
+      "session-123"
+    );
+
+    expect(sessionQuery.eq).toHaveBeenCalledWith(
+      "user_id",
+      "user-1"
+    );
+
+    expect(updateQuery.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        completed_at: expect.any(String),
+      })
+    );
+
+    expect(updateQuery.eq).toHaveBeenCalledWith(
+      "id",
+      "session-123"
+    );
+
+    expect(updateQuery.eq).toHaveBeenCalledWith(
+      "user_id",
+      "user-1"
+    );
+
+    expect(updateQuery.is).toHaveBeenCalledWith(
+      "completed_at",
+      null
+    );
+  });
+
+  it("rejects completion when the workout session is already completed", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as never);
+
+    const sessionQuery = createQuery();
+
+    sessionQuery.single.mockResolvedValue({
+      data: {
+        id: "session-123",
+        completed_at: "2026-09-20T14:00:00.000Z",
+      },
+      error: null,
+    });
+
+    const fromMock = vi.fn().mockReturnValue(sessionQuery);
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: fromMock,
+    } as never);
+
+    await expect(
+      completeWorkoutSession("session-123")
+    ).rejects.toThrow("Workout session already completed");
+
+    expect(sessionQuery.select).toHaveBeenCalledWith(
+      "id, completed_at"
+    );
+
+    expect(sessionQuery.update).not.toHaveBeenCalled();
   });
 });
