@@ -48,16 +48,19 @@ describe("getWorkoutPlan", () => {
     expect(mocks.getWorkoutAnalysis).toHaveBeenCalledWith(input);
   });
 
-  it("returns null when there is no workout analysis", async () => {
+  it("returns needs_baseline when there is no workout history", async () => {
     mocks.getWorkoutAnalysis.mockResolvedValue(null);
 
     const result = await getWorkoutPlan();
 
-    expect(result).toBeNull();
+    expect(result).toEqual({
+      status: "needs_baseline",
+    });
+
     expect(mocks.generateWorkoutPlan).not.toHaveBeenCalled();
   });
 
-  it("passes workout analysis into the deterministic plan generator", async () => {
+  it("generates a ready plan when workout history exists", async () => {
     const analysis = {
       latest_session: {
         id: "session-1",
@@ -93,7 +96,11 @@ describe("getWorkoutPlan", () => {
     expect(mocks.generateWorkoutPlan).toHaveBeenCalledWith(
       analysis
     );
-    expect(result).toEqual(plan);
+
+    expect(result).toEqual({
+      status: "ready",
+      plan,
+    });
   });
 
   it("does not replace deterministic planning with another decision layer", async () => {

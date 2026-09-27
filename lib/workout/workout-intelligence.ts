@@ -7,14 +7,28 @@ import {
   type WorkoutPlan,
 } from "@/lib/planning/workout-plan";
 
+export type WorkoutIntelligenceResult =
+  | {
+      status: "ready";
+      plan: WorkoutPlan;
+    }
+  | {
+      status: "needs_baseline";
+    };
+
 export async function getWorkoutPlan(
   input: WorkoutHistoryInput = {}
-): Promise<WorkoutPlan | null> {
+): Promise<WorkoutIntelligenceResult> {
   const workoutAnalysis = await getWorkoutAnalysis(input);
 
   if (!workoutAnalysis) {
-    return null;
+    return {
+      status: "needs_baseline",
+    };
   }
 
-  return generateWorkoutPlan(workoutAnalysis);
+  return {
+    status: "ready",
+    plan: generateWorkoutPlan(workoutAnalysis),
+  };
 }
