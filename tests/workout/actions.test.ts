@@ -16,6 +16,7 @@ import {
   createWorkoutSession,
   deleteWorkoutSet,
   getWorkoutSession,
+  getWorkoutSessions,
   updateWorkoutSet,
 } from "@/lib/workout/actions";
 
@@ -23,8 +24,10 @@ type MockQuery = {
   select: ReturnType<typeof vi.fn>;
   eq: ReturnType<typeof vi.fn>;
   is: ReturnType<typeof vi.fn>;
+  gte: ReturnType<typeof vi.fn>;
+  lte: ReturnType<typeof vi.fn>;
   order: ReturnType<typeof vi.fn>;
-  limit: ReturnType<typeof vi.fn>;
+  range: ReturnType<typeof vi.fn>;
   single: ReturnType<typeof vi.fn>;
   maybeSingle: ReturnType<typeof vi.fn>;
   insert: ReturnType<typeof vi.fn>;
@@ -37,8 +40,10 @@ function createQuery(): MockQuery {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     is: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
     single: vi.fn(),
     maybeSingle: vi.fn(),
     insert: vi.fn().mockReturnThis(),
@@ -259,9 +264,9 @@ describe("workout session actions", () => {
       id: "user-1",
     } as never);
 
-    const setQuery = createQuery();
+    const workoutSetQuery = createQuery();
 
-    setQuery.single.mockResolvedValue({
+    workoutSetQuery.single.mockResolvedValue({
       data: {
         id: "set-1",
         session_id: "session-123",
@@ -285,10 +290,10 @@ describe("workout session actions", () => {
       data: {
         id: "set-1",
         session_id: "session-123",
-        exercise_name: "Squat",
+        exercise_name: "Bench Press",
         exercise_order: 1,
         set_number: 2,
-        weight: 100,
+        weight: 85,
         reps: 6,
         felt: "hard",
       },
@@ -297,7 +302,7 @@ describe("workout session actions", () => {
 
     const fromMock = vi
       .fn()
-      .mockReturnValueOnce(setQuery)
+      .mockReturnValueOnce(workoutSetQuery)
       .mockReturnValueOnce(sessionQuery)
       .mockReturnValueOnce(updateQuery);
 
@@ -307,32 +312,29 @@ describe("workout session actions", () => {
 
     const updatedSet = await updateWorkoutSet({
       set_id: "set-1",
-      exercise_name: "Squat",
+      exercise_name: "Bench Press",
       exercise_order: 1,
       set_number: 2,
-      weight: 100,
+      weight: 85,
       reps: 6,
       felt: "hard",
     });
 
     expect(updatedSet).toMatchObject({
       id: "set-1",
-      exercise_name: "Squat",
-      weight: 100,
+      weight: 85,
       reps: 6,
       felt: "hard",
     });
 
-    expect(updateQuery.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        exercise_name: "Squat",
-        exercise_order: 1,
-        set_number: 2,
-        weight: 100,
-        reps: 6,
-        felt: "hard",
-      })
-    );
+    expect(updateQuery.update).toHaveBeenCalledWith({
+      exercise_name: "Bench Press",
+      exercise_order: 1,
+      set_number: 2,
+      weight: 85,
+      reps: 6,
+      felt: "hard",
+    });
 
     expect(updateQuery.eq).toHaveBeenCalledWith(
       "id",
@@ -340,14 +342,14 @@ describe("workout session actions", () => {
     );
   });
 
-  it("rejects updating a set in a completed session", async () => {
+  it("rejects updating a workout set from a completed session", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue({
       id: "user-1",
     } as never);
 
-    const setQuery = createQuery();
+    const workoutSetQuery = createQuery();
 
-    setQuery.single.mockResolvedValue({
+    workoutSetQuery.single.mockResolvedValue({
       data: {
         id: "set-1",
         session_id: "session-123",
@@ -367,7 +369,7 @@ describe("workout session actions", () => {
 
     const fromMock = vi
       .fn()
-      .mockReturnValueOnce(setQuery)
+      .mockReturnValueOnce(workoutSetQuery)
       .mockReturnValueOnce(sessionQuery);
 
     vi.mocked(createClient).mockResolvedValue({
@@ -377,58 +379,15 @@ describe("workout session actions", () => {
     await expect(
       updateWorkoutSet({
         set_id: "set-1",
-        exercise_name: "Squat",
+        exercise_name: "Bench Press",
         exercise_order: 1,
-        set_number: 1,
-        weight: 100,
+        set_number: 2,
+        weight: 85,
         reps: 6,
       })
     ).rejects.toThrow("Workout session is already completed");
-  });
 
-  it("rejects updating a set owned by another user", async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({
-      id: "user-1",
-    } as never);
-
-    const setQuery = createQuery();
-
-    setQuery.single.mockResolvedValue({
-      data: {
-        id: "set-1",
-        session_id: "session-123",
-      },
-      error: null,
-    });
-
-    const sessionQuery = createQuery();
-
-    sessionQuery.single.mockResolvedValue({
-      data: null,
-      error: {
-        message: "No rows found",
-      },
-    });
-
-    const fromMock = vi
-      .fn()
-      .mockReturnValueOnce(setQuery)
-      .mockReturnValueOnce(sessionQuery);
-
-    vi.mocked(createClient).mockResolvedValue({
-      from: fromMock,
-    } as never);
-
-    await expect(
-      updateWorkoutSet({
-        set_id: "set-1",
-        exercise_name: "Squat",
-        exercise_order: 1,
-        set_number: 1,
-        weight: 100,
-        reps: 6,
-      })
-    ).rejects.toThrow("Workout set not found");
+    expect(sessionQuery.update).not.toHaveBeenCalled();
   });
 
   it("deletes an active workout set", async () => {
@@ -436,9 +395,9 @@ describe("workout session actions", () => {
       id: "user-1",
     } as never);
 
-    const setQuery = createQuery();
+    const workoutSetQuery = createQuery();
 
-    setQuery.single.mockResolvedValue({
+    workoutSetQuery.single.mockResolvedValue({
       data: {
         id: "set-1",
         session_id: "session-123",
@@ -460,7 +419,7 @@ describe("workout session actions", () => {
 
     const fromMock = vi
       .fn()
-      .mockReturnValueOnce(setQuery)
+      .mockReturnValueOnce(workoutSetQuery)
       .mockReturnValueOnce(sessionQuery)
       .mockReturnValueOnce(deleteQuery);
 
@@ -482,14 +441,14 @@ describe("workout session actions", () => {
     );
   });
 
-  it("rejects deleting a set from a completed session", async () => {
+  it("rejects deleting a workout set from a completed session", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue({
       id: "user-1",
     } as never);
 
-    const setQuery = createQuery();
+    const workoutSetQuery = createQuery();
 
-    setQuery.single.mockResolvedValue({
+    workoutSetQuery.single.mockResolvedValue({
       data: {
         id: "set-1",
         session_id: "session-123",
@@ -509,7 +468,7 @@ describe("workout session actions", () => {
 
     const fromMock = vi
       .fn()
-      .mockReturnValueOnce(setQuery)
+      .mockReturnValueOnce(workoutSetQuery)
       .mockReturnValueOnce(sessionQuery);
 
     vi.mocked(createClient).mockResolvedValue({
@@ -521,42 +480,37 @@ describe("workout session actions", () => {
     ).rejects.toThrow("Workout session is already completed");
   });
 
-  it("rejects deleting a set owned by another user", async () => {
+  it("rejects completion for an unauthenticated user", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
+
+    await expect(
+      completeWorkoutSession("session-123")
+    ).rejects.toThrow("Unauthorized");
+
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects completion when the workout session does not belong to the user", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue({
       id: "user-1",
     } as never);
-
-    const setQuery = createQuery();
-
-    setQuery.single.mockResolvedValue({
-      data: {
-        id: "set-1",
-        session_id: "session-123",
-      },
-      error: null,
-    });
 
     const sessionQuery = createQuery();
 
     sessionQuery.single.mockResolvedValue({
       data: null,
-      error: {
-        message: "No rows found",
-      },
+      error: new Error("not found"),
     });
 
-    const fromMock = vi
-      .fn()
-      .mockReturnValueOnce(setQuery)
-      .mockReturnValueOnce(sessionQuery);
+    const fromMock = vi.fn().mockReturnValue(sessionQuery);
 
     vi.mocked(createClient).mockResolvedValue({
       from: fromMock,
     } as never);
 
     await expect(
-      deleteWorkoutSet("set-1")
-    ).rejects.toThrow("Workout set not found");
+      completeWorkoutSession("session-123")
+    ).rejects.toThrow("Workout session not found");
   });
 
   it("completes an active workout session", async () => {
@@ -705,6 +659,256 @@ describe("workout session actions", () => {
         }),
       ],
     });
+
+    expect(sessionQuery.eq).toHaveBeenCalledWith(
+      "id",
+      "session-123"
+    );
+
+    expect(sessionQuery.eq).toHaveBeenCalledWith(
+      "user_id",
+      "user-1"
+    );
+  });
+
+  it("rejects workout history for an unauthenticated user", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
+
+    await expect(
+      getWorkoutSessions()
+    ).rejects.toThrow("Unauthorized");
+
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("returns workout history ordered by date and created time", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as never);
+
+    const historyQuery = createQuery();
+
+    historyQuery.order
+      .mockReturnValueOnce(historyQuery)
+      .mockResolvedValueOnce({
+        data: [
+          {
+            id: "session-2",
+            user_id: "user-1",
+            date: "2026-09-03",
+            workout_sets: [],
+          },
+          {
+            id: "session-1",
+            user_id: "user-1",
+            date: "2026-09-01",
+            workout_sets: [],
+          },
+        ],
+        error: null,
+      });
+
+    const fromMock = vi.fn().mockReturnValue(historyQuery);
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: fromMock,
+    } as never);
+
+    const history = await getWorkoutSessions();
+
+    expect(history).toHaveLength(2);
+    expect(history[0].id).toBe("session-2");
+    expect(history[1].id).toBe("session-1");
+
+    expect(historyQuery.eq).toHaveBeenCalledWith(
+      "user_id",
+      "user-1"
+    );
+
+    expect(historyQuery.order).toHaveBeenNthCalledWith(
+      1,
+      "date",
+      { ascending: false }
+    );
+
+    expect(historyQuery.order).toHaveBeenNthCalledWith(
+      2,
+      "created_at",
+      { ascending: false }
+    );
+  });
+
+  it("applies date filters to workout history", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as never);
+
+    const historyQuery = createQuery();
+
+    historyQuery.order
+      .mockReturnValueOnce(historyQuery)
+      .mockReturnValueOnce(historyQuery);
+
+    historyQuery.range.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    const fromMock = vi.fn().mockReturnValue(historyQuery);
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: fromMock,
+    } as never);
+
+    await getWorkoutSessions({
+      from: "2026-09-01",
+      to: "2026-09-30",
+      limit: 20,
+      offset: 0,
+    });
+
+    expect(historyQuery.gte).toHaveBeenCalledWith(
+      "date",
+      "2026-09-01"
+    );
+
+    expect(historyQuery.lte).toHaveBeenCalledWith(
+      "date",
+      "2026-09-30"
+    );
+  });
+
+  it("applies pagination to workout history", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as never);
+
+    const historyQuery = createQuery();
+
+    historyQuery.order
+      .mockReturnValueOnce(historyQuery)
+      .mockReturnValueOnce(historyQuery);
+
+    historyQuery.range.mockResolvedValue({
+      data: [
+        {
+          id: "session-3",
+          user_id: "user-1",
+          date: "2026-09-03",
+          workout_sets: [],
+        },
+      ],
+      error: null,
+    });
+
+    const fromMock = vi.fn().mockReturnValue(historyQuery);
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: fromMock,
+    } as never);
+
+    const history = await getWorkoutSessions({
+      limit: 10,
+      offset: 20,
+    });
+
+    expect(historyQuery.range).toHaveBeenCalledWith(
+      20,
+      29
+    );
+
+    expect(history).toHaveLength(1);
+  });
+
+  it("rejects an invalid date range", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as never);
+
+    await expect(
+      getWorkoutSessions({
+        from: "2026-09-30",
+        to: "2026-09-01",
+      })
+    ).rejects.toThrow("From date cannot be after to date");
+
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid pagination values", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as never);
+
+    await expect(
+      getWorkoutSessions({
+        limit: 101,
+      })
+    ).rejects.toThrow("Limit must be an integer between 1 and 100");
+
+    await expect(
+      getWorkoutSessions({
+        offset: 10,
+      })
+    ).rejects.toThrow("Offset requires a limit");
+
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid date values", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as never);
+
+    await expect(
+      getWorkoutSessions({
+        from: "not-a-date",
+      })
+    ).rejects.toThrow("Invalid from date");
+
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("returns a single workout session with explicit fields and sets", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as never);
+
+    const sessionQuery = createQuery();
+
+    sessionQuery.single.mockResolvedValue({
+      data: {
+        id: "session-123",
+        user_id: "user-1",
+        date: "2026-09-01",
+        started_at: "2026-09-01T06:00:00.000Z",
+        completed_at: "2026-09-01T07:00:00.000Z",
+        notes: "Good session",
+        created_at: "2026-09-01T05:55:00.000Z",
+        workout_sets: [],
+      },
+      error: null,
+    });
+
+    const fromMock = vi.fn().mockReturnValue(sessionQuery);
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: fromMock,
+    } as never);
+
+    const session = await getWorkoutSession("session-123");
+
+    expect(session).toMatchObject({
+      id: "session-123",
+      user_id: "user-1",
+      date: "2026-09-01",
+      notes: "Good session",
+      workout_sets: [],
+    });
+
+    expect(sessionQuery.select).toHaveBeenCalledWith(
+      expect.stringContaining("workout_sets")
+    );
 
     expect(sessionQuery.eq).toHaveBeenCalledWith(
       "id",
