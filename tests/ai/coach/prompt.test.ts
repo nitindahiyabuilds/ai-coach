@@ -19,6 +19,7 @@ describe("buildCoachPrompt", () => {
     const prompt = buildCoachPrompt({
       context,
       workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
       history: [],
       question: "How should I train today?",
     });
@@ -206,6 +207,7 @@ describe("buildCoachPrompt", () => {
     const prompt = buildCoachPrompt({
       context: {},
       workoutAnalysis,
+      workoutIntelligenceStatus: "ready",
       history: [],
       question: "Should I increase my bench press?",
     });
@@ -233,6 +235,7 @@ describe("buildCoachPrompt", () => {
     const prompt = buildCoachPrompt({
       context: {},
       workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
       history,
       question: "What should I do today?",
     });
@@ -240,6 +243,7 @@ describe("buildCoachPrompt", () => {
     expect(prompt).toContain(
       "I want to focus on building muscle."
     );
+
     expect(prompt).toContain(
       "We'll prioritize progressive overload."
     );
@@ -252,6 +256,7 @@ describe("buildCoachPrompt", () => {
     const prompt = buildCoachPrompt({
       context: {},
       workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
       history: [],
       question,
     });
@@ -278,6 +283,7 @@ describe("buildCoachPrompt", () => {
         previous_session: null,
         exercises: [],
       },
+      workoutIntelligenceStatus: "ready",
       history: [],
       question: "What should I do?",
     });
@@ -303,6 +309,7 @@ describe("buildCoachPrompt", () => {
     const prompt = buildCoachPrompt({
       context: {},
       workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
       history: [],
       question: "How did my workout go?",
     });
@@ -316,5 +323,27 @@ describe("buildCoachPrompt", () => {
     );
 
     expect(prompt).toContain("null");
+  });
+
+  it("includes workout intelligence state", () => {
+    const prompt = buildCoachPrompt({
+      context: {},
+      workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
+      history: [],
+      question: "What should I do today?",
+    });
+
+    expect(prompt).toContain(
+      "WORKOUT INTELLIGENCE STATE:"
+    );
+
+    expect(prompt).toContain(
+      "needs_baseline"
+    );
+
+    expect(prompt).toContain(
+      'If workoutIntelligenceStatus is "needs_baseline"'
+    );
   });
 });

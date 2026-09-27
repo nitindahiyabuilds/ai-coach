@@ -1,18 +1,15 @@
-import { generateCoachResponse } from "@/lib/ai/client";
-import { generateWorkoutPlanReasoning } from "@/lib/ai/client";
-import { buildUserContext } from "@/lib/memory/context";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 import {
-  getCoachMessages,
-  saveCoachMessage,
-} from "@/lib/memory/coach";
+  generateCoachResponse,
+  generateWorkoutPlanReasoning,
+} from "@/lib/ai/client";
+import { buildUserContext } from "@/lib/memory/context";
+import { getCoachMessages, saveCoachMessage } from "@/lib/memory/coach";
 import { buildCoachPrompt } from "@/lib/ai/coach/prompt";
 import { buildWorkoutPlanPrompt } from "@/lib/ai/coach/workout-plan-prompt";
 import { getWorkoutAnalysis } from "@/lib/workout/workout-service";
-import {
-  buildWorkoutIntelligence,
-} from "@/lib/workout/workout-intelligence";
-import { NextResponse } from "next/server";
-import { z } from "zod";
+import { buildWorkoutIntelligence } from "@/lib/workout/workout-intelligence";
 
 const coachRequestSchema = z.object({
   question: z.string().trim().min(1).max(2000),
@@ -37,59 +34,46 @@ export async function POST(request: Request) {
     const question = parsed.data.question;
 
     const context = await buildUserContext();
-
     const workoutAnalysis = await getWorkoutAnalysis();
-
+    const workoutIntelligence = buildWorkoutIntelligence(workoutAnalysis);
     const history = await getCoachMessages(20);
 
     const prompt = buildCoachPrompt({
       context,
       workoutAnalysis,
+      workoutIntelligenceStatus: workoutIntelligence.status,
       history,
       question,
     });
 
     const response = await generateCoachResponse(prompt);
 
-    const workoutIntelligence =
-      buildWorkoutIntelligence(workoutAnalysis);
-
     let workoutPlan = null;
 
     if (workoutIntelligence.status === "ready") {
-      const deterministicPlan =
-        workoutIntelligence.plan;
+      const deterministicPlan = workoutIntelligence.plan;
 
       if (deterministicPlan.exercises.length > 0) {
-        const workoutPlanPrompt =
-          buildWorkoutPlanPrompt({
-            plan: deterministicPlan,
-          });
+        const workoutPlanPrompt = buildWorkoutPlanPrompt({
+          plan: deterministicPlan,
+        });
 
         const reasoning =
-          await generateWorkoutPlanReasoning(
-            workoutPlanPrompt
-          );
+          await generateWorkoutPlanReasoning(workoutPlanPrompt);
 
         workoutPlan = {
-          exercises:
-            deterministicPlan.exercises.map(
-              (exercise) => {
-                const matchingReasoning =
-                  reasoning.exercises.find(
-                    (item) =>
-                      item.exerciseName ===
-                      exercise.exerciseName
-                  );
+          exercises: deterministicPlan.exercises.map((exercise) => {
+            const matchingReasoning = reasoning.exercises.find(
+              (item) => item.exerciseName === exercise.exerciseName
+            );
 
-                return {
-                  ...exercise,
-                  reasoning:
-                    matchingReasoning?.reasoning ??
-                    "Recommendation generated from your workout history.",
-                };
-              }
-            ),
+            return {
+              ...exercise,
+              reasoning:
+                matchingReasoning?.reasoning ??
+                "Recommendation generated from your workout history.",
+            };
+          }),
         };
       }
     }

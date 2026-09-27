@@ -25,12 +25,16 @@ describe("ai boundary evaluation contract", () => {
     const prompt = buildCoachPrompt({
       context: {},
       workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
       history: [],
       question: "How should I train this week?",
     });
 
     expect(prompt).toContain(
       "Treat workout analysis as factual application-generated data."
+    );
+    expect(prompt).toContain(
+      "Treat workout intelligence state as factual application-generated data."
     );
     expect(prompt).toContain("Do not invent workout data.");
     expect(prompt).toContain(
