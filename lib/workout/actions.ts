@@ -29,6 +29,34 @@ export type UpdateWorkoutSetInput = {
   felt?: "easy" | "moderate" | "hard" | null;
 };
 
+export type WorkoutHistoryInput = {
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+const WORKOUT_SESSION_SELECT = `
+  id,
+  user_id,
+  date,
+  started_at,
+  completed_at,
+  notes,
+  created_at,
+  workout_sets (
+    id,
+    session_id,
+    exercise_name,
+    exercise_order,
+    set_number,
+    weight,
+    reps,
+    felt,
+    created_at
+  )
+`;
+
 function validateWorkoutSetInput(input: {
   exercise_name: string;
   exercise_order: number;
@@ -41,10 +69,7 @@ function validateWorkoutSetInput(input: {
     throw new Error("Exercise name is required");
   }
 
-  if (
-    !Number.isInteger(input.exercise_order) ||
-    input.exercise_order < 1
-  ) {
+  if (!Number.isInteger(input.exercise_order) || input.exercise_order < 1) {
     throw new Error("Exercise order must be a positive integer");
   }
 
@@ -67,6 +92,48 @@ function validateWorkoutSetInput(input: {
   ) {
     throw new Error("Invalid effort level");
   }
+}
+
+function validateWorkoutHistoryInput(input: WorkoutHistoryInput) {
+  if (input.from !== undefined && !isValidDate(input.from)) {
+    throw new Error("Invalid from date");
+  }
+
+  if (input.to !== undefined && !isValidDate(input.to)) {
+    throw new Error("Invalid to date");
+  }
+
+  if (
+    input.from !== undefined &&
+    input.to !== undefined &&
+    input.from > input.to
+  ) {
+    throw new Error("From date cannot be after to date");
+  }
+
+  if (
+    input.limit !== undefined &&
+    (!Number.isInteger(input.limit) ||
+      input.limit < 1 ||
+      input.limit > 100)
+  ) {
+    throw new Error("Limit must be an integer between 1 and 100");
+  }
+
+  if (
+    input.offset !== undefined &&
+    (!Number.isInteger(input.offset) || input.offset < 0)
+  ) {
+    throw new Error("Offset must be a non-negative integer");
+  }
+
+  if (input.offset !== undefined && input.limit === undefined) {
+    throw new Error("Offset requires a limit");
+  }
+}
+
+function isValidDate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 export async function createWorkoutSession(
@@ -325,20 +392,46 @@ export async function completeWorkoutSession(sessionId: string) {
   return data;
 }
 
-export async function getWorkoutSessions() {
+export async function getWorkoutSessions(
+  input: WorkoutHistoryInput = {}
+) {
   const user = await getCurrentUser();
 
   if (!user) {
     throw new Error("Unauthorized");
   }
 
+  validateWorkoutHistoryInput(input);
+
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("workout_sessions")
-    .select("*, workout_sets (*)")
-    .eq("user_id", user.id)
-    .order("date", { ascending: false });
+    .select(WORKOUT_SESSION_SELECT)
+    .eq("user_id", user.id);
+
+  if (input.from !== undefined) {
+    query = query.gte("date", input.from);
+  }
+
+  if (input.to !== undefined) {
+    query = query.lte("date", input.to);
+  }
+
+  query = query
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (input.limit !== undefined) {
+    const offset = input.offset ?? 0;
+
+    query = query.range(
+      offset,
+      offset + input.limit - 1
+    );
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error("Unable to fetch workout sessions");
@@ -358,7 +451,7 @@ export async function getWorkoutSession(sessionId: string) {
 
   const { data, error } = await supabase
     .from("workout_sessions")
-    .select("*, workout_sets (*)")
+    .select(WORKOUT_SESSION_SELECT)
     .eq("id", sessionId)
     .eq("user_id", user.id)
     .single();
