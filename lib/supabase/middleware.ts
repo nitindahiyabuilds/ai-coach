@@ -31,8 +31,8 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh the auth session if needed.
-  await supabase.auth.getUser();
+  // Refresh the auth session if needed and verify the JWT claims.
+  await supabase.auth.getClaims();
 
   return response;
 }
