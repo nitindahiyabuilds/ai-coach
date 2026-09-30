@@ -1,24 +1,6 @@
 "use client";
 
-type WorkoutPlanExercise = {
-  exerciseName: string;
-  sets: number;
-  reps: number;
-  weight: number;
-  decision: "progress" | "hold" | "deload";
-  reasonCode:
-    | "progressed"
-    | "maintain_after_decline"
-    | "deload_after_repeated_decline"
-    | "recent_return"
-    | "insufficient_history";
-  daysSinceLastTrained: number;
-  reasoning?: string;
-};
-
-type WorkoutPlan = {
-  exercises: WorkoutPlanExercise[];
-};
+import type { WorkoutPlan } from "@/lib/contracts/workout";
 
 type WorkoutPlanCardProps = {
   plan: WorkoutPlan;

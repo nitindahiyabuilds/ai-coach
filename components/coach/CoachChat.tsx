@@ -3,27 +3,12 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createWorkoutSession } from "@/lib/workout/actions";
+import type {
+  CoachErrorResponse,
+  CoachResponse,
+} from "@/lib/contracts/coach";
+import type { WorkoutPlan } from "@/lib/contracts/workout";
 import WorkoutPlanCard from "./WorkoutPlanCard";
-
-type WorkoutPlanExercise = {
-  exerciseName: string;
-  sets: number;
-  reps: number;
-  weight: number;
-  decision: "progress" | "hold" | "deload";
-  reasonCode:
-    | "progressed"
-    | "maintain_after_decline"
-    | "deload_after_repeated_decline"
-    | "recent_return"
-    | "insufficient_history";
-  daysSinceLastTrained: number;
-  reasoning?: string;
-};
-
-type WorkoutPlan = {
-  exercises: WorkoutPlanExercise[];
-};
 
 type Message = {
   role: "user" | "assistant";
@@ -34,13 +19,6 @@ type InitialMessage = {
   role: "user" | "assistant";
   content: string;
   created_at: string;
-};
-
-type CoachResponse = {
-  success: boolean;
-  answer?: string;
-  workoutPlan?: WorkoutPlan | null;
-  message?: string;
 };
 
 type CoachChatProps = {
@@ -131,13 +109,14 @@ export default function CoachChat({
         }),
       });
 
-      const data: CoachResponse =
+      const data: CoachResponse | CoachErrorResponse =
         await response.json();
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message ||
-            "Something went wrong."
+          data.success
+            ? "Something went wrong."
+            : data.message
         );
       }
 

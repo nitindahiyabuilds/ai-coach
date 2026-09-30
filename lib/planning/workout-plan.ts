@@ -3,26 +3,12 @@ import {
   generateWorkoutRecommendation,
   type ProgressionDecision,
 } from "./progression";
+import type {
+  WorkoutPlan,
+  WorkoutPlanExercise,
+} from "@/lib/contracts/workout";
 
-export type WorkoutPlanExercise = {
-  exerciseName: string;
-  sets: number;
-  reps: number;
-  weight: number;
-  decision: ProgressionDecision;
-  reasonCode:
-    | "progressed"
-    | "maintain_after_decline"
-    | "deload_after_repeated_decline"
-    | "recent_return"
-    | "insufficient_history";
-  daysSinceLastTrained: number;
-  reasoning?: string;
-};
-
-export type WorkoutPlan = {
-  exercises: WorkoutPlanExercise[];
-};
+export type { WorkoutPlan, WorkoutPlanExercise };
 
 export function generateWorkoutPlan(
   workoutAnalysis: WorkoutAnalysis
