@@ -10,6 +10,7 @@ import { buildCoachPrompt } from "@/lib/ai/coach/prompt";
 import { buildWorkoutPlanPrompt } from "@/lib/ai/coach/workout-plan-prompt";
 import { getWorkoutAnalysis } from "@/lib/workout/workout-service";
 import { buildWorkoutIntelligence } from "@/lib/workout/workout-intelligence";
+import { isWorkoutPlanRelevant } from "@/lib/workout/workout-plan-relevance";
 
 const coachRequestSchema = z.object({
   question: z.string().trim().min(1).max(2000),
@@ -50,7 +51,10 @@ export async function POST(request: Request) {
 
     let workoutPlan = null;
 
-    if (workoutIntelligence.status === "ready") {
+    if (
+      isWorkoutPlanRelevant(question) &&
+      workoutIntelligence.status === "ready"
+    ) {
       const deterministicPlan = workoutIntelligence.plan;
 
       if (deterministicPlan.exercises.length > 0) {
