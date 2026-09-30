@@ -1,6 +1,14 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth/user";
 import { getHealthMetrics } from "@/lib/health/actions";
 
 export default async function Home() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/signup");
+  }
+
   const metrics = await getHealthMetrics();
 
   return (
