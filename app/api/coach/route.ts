@@ -82,8 +82,12 @@ export async function POST(request: Request) {
       }
     }
 
-    await saveCoachMessage("user", question);
-    await saveCoachMessage("assistant", response.answer);
+    try {
+      await saveCoachMessage("user", question);
+      await saveCoachMessage("assistant", response.answer);
+    } catch (error) {
+      console.error("Failed to persist coach messages:", error);
+    }
 
     return NextResponse.json({
       success: true,
