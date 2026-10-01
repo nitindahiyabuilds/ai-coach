@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addWorkoutSet } from "@/lib/workout/actions";
-import type { WorkoutPlan } from "@/lib/planning/workout-plan";
+import type { WorkoutPlan } from "@/lib/contracts/workout";
 import type {
   WorkoutSession,
   WorkoutSet,
@@ -32,10 +32,13 @@ export default function WorkoutExecutionSession({
   plan,
 }: WorkoutExecutionSessionProps) {
   const router = useRouter();
-  const [pendingExercise, setPendingExercise] = useState<string | null>(null);
+  const [pendingExercise, setPendingExercise] =
+    useState<string | null>(null);
   const [error, setError] = useState("");
 
-  async function handleLogSet(exercise: WorkoutPlan["exercises"][number]) {
+  async function handleLogSet(
+    exercise: WorkoutPlan["exercises"][number]
+  ) {
     if (pendingExercise) {
       return;
     }
@@ -54,9 +57,11 @@ export default function WorkoutExecutionSession({
       await addWorkoutSet({
         session_id: session.id,
         exercise_name: exercise.exerciseName,
-        exercise_order: plan.exercises.findIndex(
-          (item) => item.exerciseName === exercise.exerciseName
-        ) + 1,
+        exercise_order:
+          plan.exercises.findIndex(
+            (item) =>
+              item.exerciseName === exercise.exerciseName
+          ) + 1,
         set_number: nextSetNumber,
         weight: exercise.weight,
         reps: exercise.reps,
@@ -81,6 +86,7 @@ export default function WorkoutExecutionSession({
           <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
             Workout session
           </p>
+
           <h1 className="mt-2 text-3xl font-bold">
             {new Date(session.date).toLocaleDateString(
               undefined,
@@ -91,8 +97,10 @@ export default function WorkoutExecutionSession({
               }
             )}
           </h1>
+
           <p className="mt-2 text-sm text-muted-foreground">
-            Log each set as you complete it. The database remains the source of truth.
+            Log each set as you complete it. The database
+            remains the source of truth.
           </p>
         </div>
 
@@ -108,6 +116,7 @@ export default function WorkoutExecutionSession({
               session.workout_sets,
               exercise.exerciseName
             );
+
             const isPending =
               pendingExercise === exercise.exerciseName;
 
@@ -127,7 +136,8 @@ export default function WorkoutExecutionSession({
                     </p>
 
                     <p className="text-sm text-muted-foreground">
-                      {exercise.sets} sets × {exercise.reps} reps
+                      {exercise.sets} sets ×{" "}
+                      {exercise.reps} reps
                     </p>
                   </div>
 
@@ -137,8 +147,12 @@ export default function WorkoutExecutionSession({
                 </div>
 
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Last trained {exercise.daysSinceLastTrained} day
-                  {exercise.daysSinceLastTrained === 1 ? "" : "s"} ago.
+                  Last trained{" "}
+                  {exercise.daysSinceLastTrained} day
+                  {exercise.daysSinceLastTrained === 1
+                    ? ""
+                    : "s"}{" "}
+                  ago.
                 </p>
 
                 {exercise.reasonCode && (
@@ -146,6 +160,7 @@ export default function WorkoutExecutionSession({
                     <p className="text-xs font-medium text-muted-foreground">
                       Why this recommendation
                     </p>
+
                     <p className="mt-1 text-sm">
                       {exercise.reasoning ??
                         "Recommendation generated from your workout history."}
@@ -156,16 +171,21 @@ export default function WorkoutExecutionSession({
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium">
-                      Logged sets ({loggedSets.length}/{exercise.sets})
+                      Logged sets ({loggedSets.length}/
+                      {exercise.sets})
                     </p>
 
                     <button
                       type="button"
-                      onClick={() => handleLogSet(exercise)}
+                      onClick={() =>
+                        handleLogSet(exercise)
+                      }
                       disabled={isPending}
                       className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {isPending ? "Saving..." : "Log set"}
+                      {isPending
+                        ? "Saving..."
+                        : "Log set"}
                     </button>
                   </div>
 
@@ -177,8 +197,10 @@ export default function WorkoutExecutionSession({
                           className="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm"
                         >
                           <span>
-                            Set {set.set_number}: {set.weight} kg × {set.reps}
+                            Set {set.set_number}:{" "}
+                            {set.weight} kg × {set.reps}
                           </span>
+
                           <span className="text-xs uppercase tracking-wide text-muted-foreground">
                             Saved
                           </span>
