@@ -15,6 +15,8 @@ type WorkoutExecutionSessionProps = {
   plan: WorkoutPlan;
 };
 
+type EffortLevel = "easy" | "moderate" | "hard";
+
 function getExerciseSets(
   sets: WorkoutSet[],
   exerciseName: string
@@ -36,6 +38,29 @@ export default function WorkoutExecutionSession({
   const [pendingExercise, setPendingExercise] =
     useState<string | null>(null);
   const [error, setError] = useState("");
+  const [weightInputs, setWeightInputs] = useState<
+    Record<string, string>
+  >({});
+  const [repsInputs, setRepsInputs] = useState<
+    Record<string, string>
+  >({});
+  const [feltInputs, setFeltInputs] = useState<
+    Record<string, EffortLevel | "">
+  >({});
+
+  function getWeightInput(
+    exerciseName: string,
+    prescribedWeight: number
+  ) {
+    return weightInputs[exerciseName] ?? String(prescribedWeight);
+  }
+
+  function getRepsInput(
+    exerciseName: string,
+    prescribedReps: number
+  ) {
+    return repsInputs[exerciseName] ?? String(prescribedReps);
+  }
 
   async function handleLogSet(
     exercise: WorkoutPlan["exercises"][number]
@@ -44,16 +69,42 @@ export default function WorkoutExecutionSession({
       return;
     }
 
+    const loggedSets = getExerciseSets(
+      session.workout_sets,
+      exercise.exerciseName
+    );
+
+    if (loggedSets.length >= exercise.sets) {
+      return;
+    }
+
+    const weight = Number(
+      getWeightInput(exercise.exerciseName, exercise.weight)
+    );
+    const reps = Number(
+      getRepsInput(exercise.exerciseName, exercise.reps)
+    );
+
+    if (!Number.isFinite(weight) || weight < 0) {
+      setError(
+        `${exercise.exerciseName}: enter a valid weight.`
+      );
+      return;
+    }
+
+    if (!Number.isInteger(reps) || reps < 1) {
+      setError(
+        `${exercise.exerciseName}: enter a valid number of reps.`
+      );
+      return;
+    }
+
     setError("");
     setPendingExercise(exercise.exerciseName);
 
     try {
-      const loggedSets = getExerciseSets(
-        session.workout_sets,
-        exercise.exerciseName
-      );
-
       const nextSetNumber = loggedSets.length + 1;
+      const felt = feltInputs[exercise.exerciseName];
 
       await addWorkoutSet({
         session_id: session.id,
@@ -64,8 +115,9 @@ export default function WorkoutExecutionSession({
               item.exerciseName === exercise.exerciseName
           ) + 1,
         set_number: nextSetNumber,
-        weight: exercise.weight,
-        reps: exercise.reps,
+        weight,
+        reps,
+        felt: felt || null,
       });
 
       router.refresh();
@@ -100,8 +152,8 @@ export default function WorkoutExecutionSession({
           </h1>
 
           <p className="mt-2 text-sm text-muted-foreground">
-            Log each set as you complete it. The database
-            remains the source of truth.
+            Log each set with what you actually performed.
+            The database remains the source of truth.
           </p>
         </div>
 
@@ -124,6 +176,9 @@ export default function WorkoutExecutionSession({
               const isPending =
                 pendingExercise === exercise.exerciseName;
 
+              const completedAllSets =
+                loggedSets.length >= exercise.sets;
+
               return (
                 <article
                   key={exercise.exerciseName}
@@ -135,13 +190,17 @@ export default function WorkoutExecutionSession({
                         {exercise.exerciseName}
                       </h2>
 
-                      <p className="mt-2 text-2xl font-bold">
-                        {exercise.weight} kg
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Prescribed
+                      </p>
+
+                      <p className="text-2xl font-bold">
+                        {exercise.weight} kg ×{" "}
+                        {exercise.reps} reps
                       </p>
 
                       <p className="text-sm text-muted-foreground">
-                        {exercise.sets} sets ×{" "}
-                        {exercise.reps} reps
+                        {exercise.sets} sets
                       </p>
                     </div>
 
@@ -179,19 +238,123 @@ export default function WorkoutExecutionSession({
                         {exercise.sets})
                       </p>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleLogSet(exercise)
-                        }
-                        disabled={isPending}
-                        className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isPending
-                          ? "Saving..."
-                          : "Log set"}
-                      </button>
+                      {completedAllSets && (
+                        <span className="text-sm font-medium text-muted-foreground">
+                          All sets logged
+                        </span>
+                      )}
                     </div>
+
+                    {!completedAllSets && (
+                      <div className="rounded-lg border bg-background p-3">
+                        <p className="text-sm font-medium">
+                          Set {loggedSets.length + 1}
+                        </p>
+
+                        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                          <label className="space-y-1">
+                            <span className="text-xs text-muted-foreground">
+                              Actual weight (kg)
+                            </span>
+
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.5"
+                              value={getWeightInput(
+                                exercise.exerciseName,
+                                exercise.weight
+                              )}
+                              onChange={(event) =>
+                                setWeightInputs((current) => ({
+                                  ...current,
+                                  [exercise.exerciseName]:
+                                    event.target.value,
+                                }))
+                              }
+                              disabled={isPending}
+                              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                            />
+                          </label>
+
+                          <label className="space-y-1">
+                            <span className="text-xs text-muted-foreground">
+                              Actual reps
+                            </span>
+
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={getRepsInput(
+                                exercise.exerciseName,
+                                exercise.reps
+                              )}
+                              onChange={(event) =>
+                                setRepsInputs((current) => ({
+                                  ...current,
+                                  [exercise.exerciseName]:
+                                    event.target.value,
+                                }))
+                              }
+                              disabled={isPending}
+                              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                            />
+                          </label>
+
+                          <label className="space-y-1">
+                            <span className="text-xs text-muted-foreground">
+                              Felt
+                            </span>
+
+                            <select
+                              value={
+                                feltInputs[
+                                  exercise.exerciseName
+                                ] ?? ""
+                              }
+                              onChange={(event) =>
+                                setFeltInputs((current) => ({
+                                  ...current,
+                                  [exercise.exerciseName]:
+                                    event.target.value as
+                                      | EffortLevel
+                                      | "",
+                                }))
+                              }
+                              disabled={isPending}
+                              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                            >
+                              <option value="">
+                                Not recorded
+                              </option>
+                              <option value="easy">
+                                Easy
+                              </option>
+                              <option value="moderate">
+                                Moderate
+                              </option>
+                              <option value="hard">
+                                Hard
+                              </option>
+                            </select>
+                          </label>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleLogSet(exercise)
+                          }
+                          disabled={isPending}
+                          className="mt-3 w-full rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isPending
+                            ? "Saving..."
+                            : "Log set"}
+                        </button>
+                      </div>
+                    )}
 
                     {loggedSets.length > 0 ? (
                       <ul className="space-y-2">
@@ -200,11 +363,19 @@ export default function WorkoutExecutionSession({
                             key={set.id}
                             className="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm"
                           >
-                            <span>
-                              Set {set.set_number}:{" "}
-                              {set.weight} kg ×{" "}
-                              {set.reps}
-                            </span>
+                            <div>
+                              <span>
+                                Set {set.set_number}:{" "}
+                                {set.weight} kg ×{" "}
+                                {set.reps}
+                              </span>
+
+                              {set.felt && (
+                                <span className="ml-2 text-xs capitalize text-muted-foreground">
+                                  {set.felt}
+                                </span>
+                              )}
+                            </div>
 
                             <span className="text-xs uppercase tracking-wide text-muted-foreground">
                               Saved
