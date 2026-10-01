@@ -1,6 +1,7 @@
 "use client";
 
 import type { WorkoutPlan } from "@/lib/contracts/workout";
+import WorkoutEmptyState from "@/components/workout/WorkoutEmptyState";
 
 type WorkoutPlanCardProps = {
   plan: WorkoutPlan;
@@ -14,7 +15,12 @@ export default function WorkoutPlanCard({
   startingWorkout = false,
 }: WorkoutPlanCardProps) {
   if (!plan.exercises.length) {
-    return null;
+    return (
+      <WorkoutEmptyState
+        title="Your workout plan is not ready yet"
+        description="Complete a workout first so your coach can learn from your training history and build a history-based plan."
+      />
+    );
   }
 
   return (
@@ -37,7 +43,9 @@ export default function WorkoutPlanCard({
             disabled={startingWorkout}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {startingWorkout ? "Starting..." : "Start workout"}
+            {startingWorkout
+              ? "Starting..."
+              : "Start workout"}
           </button>
         </div>
       )}
@@ -68,8 +76,8 @@ export default function WorkoutPlanCard({
                 </p>
 
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Last trained {exercise.daysSinceLastTrained}{" "}
-                  day
+                  Last trained{" "}
+                  {exercise.daysSinceLastTrained} day
                   {exercise.daysSinceLastTrained === 1
                     ? ""
                     : "s"}{" "}
