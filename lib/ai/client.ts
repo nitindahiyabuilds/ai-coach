@@ -1,13 +1,16 @@
 import {
   coachResponseSchema,
   healthExplanationSchema,
+  personalMemoryExtractionSchema,
   type CoachResponse,
   type HealthExplanation,
+  type PersonalMemoryExtraction,
 } from "./schema";
 import {
   workoutPlanReasoningSchema,
   type WorkoutPlanReasoning,
 } from "./coach/workout-plan";
+import { buildPersonalMemoryExtractionPrompt } from "./memory/prompt";
 import { createAIProvider } from "./provider-factory";
 
 const aiProvider = createAIProvider();
@@ -28,7 +31,14 @@ export async function generateHealthExplanation(
         protein: { type: "string" },
         water: { type: "string" },
       },
-      required: ["summary", "bmr", "tdee", "calories", "protein", "water"],
+      required: [
+        "summary",
+        "bmr",
+        "tdee",
+        "calories",
+        "protein",
+        "water",
+      ],
       additionalProperties: false,
     },
   });
@@ -141,4 +151,56 @@ export async function generateWorkoutPlanReasoning(
   }
 
   throw new Error("Workout plan reasoning request failed");
+}
+
+export async function generatePersonalMemoryFacts(
+  userMessage: string,
+): Promise<PersonalMemoryExtraction> {
+  const prompt = buildPersonalMemoryExtractionPrompt(userMessage);
+
+  const response = await aiProvider.generateStructuredResponse({
+    prompt,
+    schemaName: "personal_memory_extraction",
+    schema: {
+      type: "object",
+      properties: {
+        facts: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              fact: { type: "string" },
+              category: {
+                type: "string",
+                enum: [
+                  "preference",
+                  "constraint",
+                  "goal",
+                  "context",
+                ],
+              },
+              evidence: {
+                type: "string",
+                enum: ["confirmed", "inferred"],
+              },
+            },
+            required: ["fact", "category", "evidence"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["facts"],
+      additionalProperties: false,
+    },
+  });
+
+  const result = personalMemoryExtractionSchema.safeParse(response);
+
+  if (!result.success) {
+    throw new Error(
+      "AI returned an invalid personal memory extraction structure",
+    );
+  }
+
+  return result.data;
 }
