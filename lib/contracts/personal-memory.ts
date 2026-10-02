@@ -22,6 +22,12 @@ export type PersonalMemoryStatus =
   | "invalidated"
   | "contradictory";
 
+export type PersonalMemoryFactCandidate = {
+  fact: string;
+  category: PersonalMemoryCategory;
+  evidence: "confirmed" | "inferred";
+};
+
 export type PersonalMemoryFact = {
   id: string;
   user_id: string;
