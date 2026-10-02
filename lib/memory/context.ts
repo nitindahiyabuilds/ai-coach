@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/user";
 import { calculateHealthMetrics } from "@/lib/calculations";
+import type { PersonalContext } from "@/lib/contracts/personal-context";
 
-export async function buildUserContext() {
+export async function buildPersonalContext(): Promise<PersonalContext> {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -56,7 +57,6 @@ export async function buildUserContext() {
       dietary_preference: profile.dietary_preference,
       region: profile.region,
     },
-
     healthMetrics,
   };
 }

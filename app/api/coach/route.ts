@@ -4,7 +4,7 @@ import {
   generateCoachResponse,
   generateWorkoutPlanReasoning,
 } from "@/lib/ai/client";
-import { buildUserContext } from "@/lib/memory/context";
+import { buildPersonalContext } from "@/lib/memory/context";
 import {
   getCoachMessages,
   saveCoachMessage,
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     const question = parsed.data.question;
 
-    const context = await buildUserContext();
+    const context = await buildPersonalContext();
     const workoutAnalysis = await getWorkoutAnalysis();
     const workoutIntelligence =
       buildWorkoutIntelligence(workoutAnalysis);

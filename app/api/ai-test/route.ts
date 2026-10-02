@@ -1,10 +1,10 @@
 import { generateHealthExplanation } from "@/lib/ai/client";
-import { buildUserContext } from "@/lib/memory/context";
+import { buildPersonalContext } from "@/lib/memory/context";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const context = await buildUserContext();
+    const context = await buildPersonalContext();
 
     const prompt = `
 You are the AI Coach, an AI health and lifestyle coaching system.
