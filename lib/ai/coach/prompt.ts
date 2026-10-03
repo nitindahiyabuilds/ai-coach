@@ -1,11 +1,13 @@
 import { COACH_INSTRUCTIONS } from "./instructions";
 import { COACH_RULES } from "./rules";
+import type { PersonalMemorySearchResult } from "@/lib/contracts/personal-memory-retrieval";
 import type { WorkoutAnalysis } from "@/lib/workout/workout";
 
 type WorkoutIntelligenceStatus = "ready" | "needs_baseline";
 
 type BuildCoachPromptParams = {
   context: unknown;
+  personalMemories?: PersonalMemorySearchResult[];
   workoutAnalysis: WorkoutAnalysis | null;
   workoutIntelligenceStatus: WorkoutIntelligenceStatus;
   history: unknown[];
@@ -14,6 +16,7 @@ type BuildCoachPromptParams = {
 
 export function buildCoachPrompt({
   context,
+  personalMemories = [],
   workoutAnalysis,
   workoutIntelligenceStatus,
   history,
@@ -27,6 +30,10 @@ ${COACH_RULES}
 USER CONTEXT:
 
 ${JSON.stringify(context, null, 2)}
+
+RETRIEVED PERSONAL MEMORY:
+
+${JSON.stringify(personalMemories, null, 2)}
 
 WORKOUT INTELLIGENCE STATE:
 
@@ -44,11 +51,25 @@ CURRENT USER QUESTION:
 
 ${question}
 
-Use the user's context, workout intelligence state, workout analysis, and conversation history when relevant.
+Use the user's context, retrieved personal memory, workout intelligence state, workout analysis, and conversation history when relevant.
+
+Treat user context as factual application-generated data.
 
 Treat workout analysis as factual application-generated data.
 
 Treat workout intelligence state as factual application-generated data.
+
+Treat retrieved personal memory as contextual evidence about the user.
+
+Use retrieved personal memory only when relevant to the current question or decision.
+
+Do not invent personal memory facts.
+
+Do not treat inferred personal memory as confirmed fact.
+
+If retrieved personal memory conflicts with explicit current user information, prioritize the user's current explicit statement.
+
+Do not claim that a retrieved memory is current if its status or evidence indicates otherwise.
 
 Do not invent workout data.
 
