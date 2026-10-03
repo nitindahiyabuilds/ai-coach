@@ -14,6 +14,8 @@ import { buildWorkoutPlanPrompt } from "@/lib/ai/coach/workout-plan-prompt";
 import { getWorkoutAnalysis } from "@/lib/workout/workout-service";
 import { buildWorkoutIntelligence } from "@/lib/workout/workout-intelligence";
 import { isWorkoutPlanRelevant } from "@/lib/workout/workout-plan-relevance";
+import { retrievePersonalMemoryFacts } from "@/lib/memory/retrieval";
+import type { PersonalMemorySearchResult } from "@/lib/contracts/personal-memory-retrieval";
 import type {
   CoachErrorResponse,
   CoachResponse,
@@ -36,15 +38,32 @@ export async function POST(request: Request) {
         message: "A valid question is required.",
       };
 
-      return NextResponse.json(
-        errorResponse,
-        { status: 400 }
-      );
+      return NextResponse.json(errorResponse, { status: 400 });
     }
 
     const question = parsed.data.question;
 
     const context = await buildPersonalContext();
+
+    let personalMemories: PersonalMemorySearchResult[] = [];
+
+    try {
+      personalMemories =
+        await retrievePersonalMemoryFacts(question);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "Unauthorized"
+      ) {
+        throw error;
+      }
+
+      console.error(
+        "Failed to retrieve personal memory:",
+        error,
+      );
+    }
+
     const workoutAnalysis = await getWorkoutAnalysis();
     const workoutIntelligence =
       buildWorkoutIntelligence(workoutAnalysis);
@@ -52,6 +71,7 @@ export async function POST(request: Request) {
 
     const prompt = buildCoachPrompt({
       context,
+      personalMemories,
       workoutAnalysis,
       workoutIntelligenceStatus:
         workoutIntelligence.status,
@@ -76,7 +96,7 @@ export async function POST(request: Request) {
 
         const reasoning =
           await generateWorkoutPlanReasoning(
-            workoutPlanPrompt
+            workoutPlanPrompt,
           );
 
         workoutPlan = {
@@ -86,7 +106,7 @@ export async function POST(request: Request) {
                 reasoning.exercises.find(
                   (item) =>
                     item.exerciseName ===
-                    exercise.exerciseName
+                    exercise.exerciseName,
                 );
 
               return {
@@ -95,7 +115,7 @@ export async function POST(request: Request) {
                   matchingReasoning?.reasoning ??
                   "Recommendation generated from your workout history.",
               };
-            }
+            },
           ),
         };
       }
@@ -105,12 +125,12 @@ export async function POST(request: Request) {
       await saveCoachMessage("user", question);
       await saveCoachMessage(
         "assistant",
-        response.answer
+        response.answer,
       );
     } catch (error) {
       console.error(
         "Failed to persist coach messages:",
-        error
+        error,
       );
     }
 
@@ -131,7 +151,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       errorResponse,
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
