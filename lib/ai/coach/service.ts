@@ -4,6 +4,8 @@ import {
 } from "@/lib/ai/client";
 import { buildCoachPrompt } from "@/lib/ai/coach/prompt";
 import { buildWorkoutPlanPrompt } from "@/lib/ai/coach/workout-plan-prompt";
+import { validateWorkoutPlanReasoning } from "@/lib/ai/coach/workout-plan-validation";
+import type { WorkoutPlanReasoning } from "@/lib/ai/coach/workout-plan";
 import { getCoachMessages, saveCoachMessage } from "@/lib/memory/coach";
 import { buildPersonalContext } from "@/lib/memory/context";
 import { retrievePersonalMemoryFacts } from "@/lib/memory/retrieval";
@@ -13,6 +15,9 @@ import { isWorkoutPlanRelevant } from "@/lib/workout/workout-plan-relevance";
 import type { CoachResponse } from "@/lib/contracts/coach";
 import type { PersonalMemorySearchResult } from "@/lib/contracts/personal-memory-retrieval";
 import type { WorkoutPlan } from "@/lib/contracts/workout";
+
+const FALLBACK_WORKOUT_REASONING =
+  "Recommendation generated from your workout history.";
 
 export async function generateCoachResponseForUser(
   question: string,
@@ -63,36 +68,58 @@ export async function generateCoachResponseForUser(
     isWorkoutPlanRelevant(question) &&
     workoutIntelligence.status === "ready"
   ) {
-    const deterministicPlan = workoutIntelligence.plan;
+    const deterministicPlan =
+      workoutIntelligence.plan;
 
     if (deterministicPlan.exercises.length > 0) {
-      const workoutPlanPrompt = buildWorkoutPlanPrompt({
-        plan: deterministicPlan,
-      });
+      const workoutPlanPrompt =
+        buildWorkoutPlanPrompt({
+          plan: deterministicPlan,
+        });
 
-      const reasoning =
-        await generateWorkoutPlanReasoning(
-          workoutPlanPrompt,
+      let reasoning: WorkoutPlanReasoning | null =
+        null;
+
+      try {
+        reasoning =
+          await generateWorkoutPlanReasoning(
+            workoutPlanPrompt,
+          );
+      } catch (error) {
+        console.error(
+          "Failed to generate workout plan reasoning:",
+          error,
+        );
+      }
+
+      const reasoningIsValid =
+        reasoning !== null &&
+        validateWorkoutPlanReasoning(
+          deterministicPlan,
+          reasoning,
         );
 
       workoutPlan = {
-        exercises: deterministicPlan.exercises.map(
-          (exercise) => {
-            const matchingReasoning =
-              reasoning.exercises.find(
-                (item) =>
-                  item.exerciseName ===
-                  exercise.exerciseName,
-              );
+        exercises:
+          deterministicPlan.exercises.map(
+            (exercise) => {
+              const matchingReasoning =
+                reasoningIsValid && reasoning
+                  ? reasoning.exercises.find(
+                      (item) =>
+                        item.exerciseName ===
+                        exercise.exerciseName,
+                    )
+                  : undefined;
 
-            return {
-              ...exercise,
-              reasoning:
-                matchingReasoning?.reasoning ??
-                "Recommendation generated from your workout history.",
-            };
-          },
-        ),
+              return {
+                ...exercise,
+                reasoning:
+                  matchingReasoning?.reasoning ??
+                  FALLBACK_WORKOUT_REASONING,
+              };
+            },
+          ),
       };
     }
   }
