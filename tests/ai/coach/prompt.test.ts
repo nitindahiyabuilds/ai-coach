@@ -192,8 +192,8 @@ describe("buildCoachPrompt", () => {
                 exercise_name: "Bench Press",
                 exercise_order: 1,
                 set_number: 1,
-                weight: 80,
                 reps: 8,
+                weight: 80,
                 felt: "moderate",
                 created_at: "2026-08-28T10:15:00Z",
               },
@@ -241,11 +241,11 @@ describe("buildCoachPrompt", () => {
     });
 
     expect(prompt).toContain(
-      "I want to focus on building muscle."
+      "I want to focus on building muscle.",
     );
 
     expect(prompt).toContain(
-      "We'll prioritize progressive overload."
+      "We'll prioritize progressive overload.",
     );
   });
 
@@ -289,19 +289,19 @@ describe("buildCoachPrompt", () => {
     });
 
     expect(prompt).toContain(
-      "Treat workout analysis as factual application-generated data."
+      "Treat workout analysis as factual application-generated data.",
     );
 
     expect(prompt).toContain(
-      "Do not invent workout data."
+      "Do not invent workout data.",
     );
 
     expect(prompt).toContain(
-      "Do not perform calculations that contradict the supplied workout analysis."
+      "Do not perform calculations that contradict the supplied workout analysis.",
     );
 
     expect(prompt).toContain(
-      "The AI may interpret the workout analysis and explain it to the user, but deterministic calculations remain the responsibility of the application."
+      "The AI may interpret the workout analysis and explain it to the user, but deterministic calculations remain the responsibility of the application.",
     );
   });
 
@@ -315,11 +315,11 @@ describe("buildCoachPrompt", () => {
     });
 
     expect(prompt).toContain(
-      "Do not claim the user completed a workout if workoutAnalysis is null."
+      "Do not claim the user completed a workout if workoutAnalysis is null.",
     );
 
     expect(prompt).toContain(
-      "WORKOUT ANALYSIS:"
+      "WORKOUT ANALYSIS:",
     );
 
     expect(prompt).toContain("null");
@@ -335,15 +335,147 @@ describe("buildCoachPrompt", () => {
     });
 
     expect(prompt).toContain(
-      "WORKOUT INTELLIGENCE STATE:"
+      "WORKOUT INTELLIGENCE STATE:",
     );
 
     expect(prompt).toContain(
-      "needs_baseline"
+      "needs_baseline",
     );
 
     expect(prompt).toContain(
-      'If workoutIntelligenceStatus is "needs_baseline"'
+      'If workoutIntelligenceStatus is "needs_baseline"',
+    );
+  });
+
+  it("includes the adaptive coaching decision process", () => {
+    const prompt = buildCoachPrompt({
+      context: {},
+      workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
+      history: [],
+      question: "I want to start working out.",
+    });
+
+    expect(prompt).toContain(
+      "Before answering, determine whether you have enough relevant information to give a genuinely useful and personalized answer.",
+    );
+
+    expect(prompt).toContain(
+      "IDENTIFY DECISION-CRITICAL GAPS",
+    );
+
+    expect(prompt).toContain(
+      "If important decision-critical information is missing:",
+    );
+
+    expect(prompt).toContain(
+      "Ask only for the highest-value missing piece of information.",
+    );
+  });
+
+  it("prevents unnecessary and repetitive follow-up questions", () => {
+    const prompt = buildCoachPrompt({
+      context: {
+        profile: {
+          age: 22,
+          goal: "muscle_gain",
+          equipment: "home gym",
+        },
+      },
+      workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
+      history: [
+        {
+          role: "user",
+          content: "I train at home.",
+        },
+      ],
+      question: "What should I do today?",
+    });
+
+    expect(prompt).toContain(
+      "Do not ask for information that is already available in:",
+    );
+
+    expect(prompt).toContain(
+      "Do not ask a question merely to make the conversation feel more conversational.",
+    );
+
+    expect(prompt).toContain(
+      "Ask one question at a time.",
+    );
+  });
+
+  it("requires learning before prescribing when personalization inputs are missing", () => {
+    const prompt = buildCoachPrompt({
+      context: {},
+      workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
+      history: [],
+      question: "Build me a workout plan.",
+    });
+
+    expect(prompt).toContain(
+      "LEARN BEFORE PRESCRIBING",
+    );
+
+    expect(prompt).toContain(
+      "do not immediately prescribe a detailed solution",
+    );
+
+    expect(prompt).toContain(
+      "First collect the smallest amount of information necessary",
+    );
+  });
+
+  it("allows the coach to answer when missing information is not decision-critical", () => {
+    const prompt = buildCoachPrompt({
+      context: {},
+      workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
+      history: [],
+      question: "What is progressive overload?",
+    });
+
+    expect(prompt).toContain(
+      "If some information is missing but does not materially affect the current answer, proceed with the best useful answer you can give.",
+    );
+
+    expect(prompt).toContain(
+      "If the available context is sufficient:",
+    );
+
+    expect(prompt).toContain(
+      "Do not ask unnecessary follow-up questions.",
+    );
+  });
+
+  it("prioritizes current explicit user information over retrieved memory", () => {
+    const prompt = buildCoachPrompt({
+      context: {},
+      personalMemories: [
+        {
+          id: "memory-1",
+          user_id: "user-1",
+          fact: "Prefers evening workouts",
+          category: "preference",
+          source: "user",
+          evidence: "confirmed",
+          status: "active",
+          created_at: "2026-10-03T10:00:00Z",
+          updated_at: "2026-10-03T10:00:00Z",
+          supersedes_id: null,
+          similarity: 0.92,
+        },
+      ],
+      workoutAnalysis: null,
+      workoutIntelligenceStatus: "needs_baseline",
+      history: [],
+      question: "I actually prefer morning workouts now.",
+    });
+
+    expect(prompt).toContain(
+      "If the current message updates or contradicts previously retrieved memory or conversation context, use the current explicit statement.",
     );
   });
 });
