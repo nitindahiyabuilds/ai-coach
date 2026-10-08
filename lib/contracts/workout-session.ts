@@ -1,3 +1,10 @@
+export type PostWorkoutFeedback =
+  | "easy"
+  | "smooth"
+  | "good"
+  | "hard"
+  | "brutal";
+
 export type WorkoutSet = {
   id: string;
   session_id: string;
@@ -17,6 +24,7 @@ export type WorkoutSession = {
   started_at: string | null;
   completed_at: string | null;
   notes: string | null;
+  post_workout_feedback: PostWorkoutFeedback | null;
   created_at: string;
   workout_sets: WorkoutSet[];
 };

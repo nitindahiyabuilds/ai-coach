@@ -240,6 +240,7 @@ describe("Lifestyle OS AI evaluation suite", () => {
             started_at: "2026-10-01T10:00:00Z",
             completed_at: "2026-10-01T11:00:00Z",
             notes: null,
+            post_workout_feedback: null,
             created_at: "2026-10-01T10:00:00Z",
             workout_sets: [],
           },

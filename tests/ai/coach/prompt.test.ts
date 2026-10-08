@@ -40,6 +40,7 @@ describe("buildCoachPrompt", () => {
         started_at: "2026-08-28T10:00:00Z",
         completed_at: "2026-08-28T11:00:00Z",
         notes: null,
+        post_workout_feedback: null,
         created_at: "2026-08-28T10:00:00Z",
         workout_sets: [
           {
@@ -62,6 +63,7 @@ describe("buildCoachPrompt", () => {
         started_at: "2026-08-25T10:00:00Z",
         completed_at: "2026-08-25T11:00:00Z",
         notes: null,
+        post_workout_feedback: null,
         created_at: "2026-08-25T10:00:00Z",
         workout_sets: [
           {
@@ -272,6 +274,7 @@ describe("buildCoachPrompt", () => {
       started_at: null,
       completed_at: null,
       notes: null,
+      post_workout_feedback: null,
       created_at: "2026-08-28T10:00:00Z",
       workout_sets: [],
     };
