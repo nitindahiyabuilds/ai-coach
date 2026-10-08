@@ -1,40 +1,21 @@
 "use server";
 
+import type {
+  CreateWorkoutSessionInput,
+  CreateWorkoutSetInput,
+  UpdateWorkoutSetInput,
+  WorkoutHistoryInput,
+} from "@/lib/contracts/workout-session";
+
+export type {
+  CreateWorkoutSessionInput,
+  CreateWorkoutSetInput,
+  UpdateWorkoutSetInput,
+  WorkoutHistoryInput,
+} from "@/lib/contracts/workout-session";
+
 import { getCurrentUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
-
-export type CreateWorkoutSessionInput = {
-  date?: string;
-  started_at?: string;
-  notes?: string;
-};
-
-export type CreateWorkoutSetInput = {
-  session_id: string;
-  exercise_name: string;
-  exercise_order: number;
-  set_number: number;
-  weight: number;
-  reps: number;
-  felt?: "easy" | "moderate" | "hard" | null;
-};
-
-export type UpdateWorkoutSetInput = {
-  set_id: string;
-  exercise_name: string;
-  exercise_order: number;
-  set_number: number;
-  weight: number;
-  reps: number;
-  felt?: "easy" | "moderate" | "hard" | null;
-};
-
-export type WorkoutHistoryInput = {
-  from?: string;
-  to?: string;
-  limit?: number;
-  offset?: number;
-};
 
 const WORKOUT_SESSION_SELECT = `
   id,

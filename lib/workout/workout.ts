@@ -1,25 +1,12 @@
-export type WorkoutSet = {
-  id: string;
-  session_id: string;
-  exercise_name: string;
-  exercise_order: number;
-  set_number: number;
-  weight: number;
-  reps: number;
-  felt: "easy" | "moderate" | "hard" | null;
-  created_at: string;
-};
+import type {
+  WorkoutSet,
+  WorkoutSession,
+} from "@/lib/contracts/workout-session";
 
-export type WorkoutSession = {
-  id: string;
-  user_id: string;
-  date: string;
-  started_at: string | null;
-  completed_at: string | null;
-  notes: string | null;
-  created_at: string;
-  workout_sets: WorkoutSet[];
-};
+export type {
+  WorkoutSet,
+  WorkoutSession,
+} from "@/lib/contracts/workout-session";
 
 export type ExerciseSessionAnalysis = {
   session_date: string;
