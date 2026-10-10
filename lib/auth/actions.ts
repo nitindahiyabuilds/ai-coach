@@ -1,6 +1,7 @@
 "use server";
 
-import { signUpSchema } from "./validation";
+import { redirect } from "next/navigation";
+import { signInSchema, signUpSchema } from "./validation";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = {
@@ -53,4 +54,39 @@ if (error) {
     success: true,
     message: "Check your email to verify your account.",
   };
+}
+
+export async function signInWithPassword(
+  _: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const parsed = signInSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0].message,
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
+
+  if (error) {
+    return {
+      success: false,
+      message:
+        error.code === "invalid_credentials"
+          ? "Email or password is incorrect."
+          : "Unable to sign in right now. Please try again.",
+    };
+  }
+
+  redirect("/coach");
 }
