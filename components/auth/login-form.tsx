@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { signUp, type AuthState } from "@/lib/auth/actions";
+import {
+  signInWithPassword,
+  type AuthState,
+} from "@/lib/auth/actions";
 
 const initialState: AuthState = {
   success: false,
   message: "",
 };
 
-export default function SignupForm() {
+export default function LoginForm() {
   const [state, formAction, pending] = useActionState(
-    signUp,
+    signInWithPassword,
     initialState
   );
 
@@ -20,12 +23,13 @@ export default function SignupForm() {
       action={formAction}
       className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-lg border p-6"
     >
-      <h1 className="text-2xl font-bold">Create Account</h1>
+      <h1 className="text-2xl font-bold">Sign In</h1>
 
       <input
         type="email"
         name="email"
         placeholder="Email"
+        autoComplete="email"
         required
         className="rounded-md border p-3"
       />
@@ -34,8 +38,8 @@ export default function SignupForm() {
         type="password"
         name="password"
         placeholder="Password"
+        autoComplete="current-password"
         required
-        minLength={8}
         className="rounded-md border p-3"
       />
 
@@ -44,23 +48,19 @@ export default function SignupForm() {
         disabled={pending}
         className="rounded-md bg-black p-3 text-white disabled:opacity-50"
       >
-        {pending ? "Creating..." : "Create Account"}
+        {pending ? "Signing in..." : "Sign In"}
       </button>
 
       {state.message && (
-        <p
-          className={`text-sm ${
-            state.success ? "text-green-600" : "text-red-600"
-          }`}
-        >
+        <p className="text-sm text-red-600" role="alert">
           {state.message}
         </p>
       )}
 
       <p className="text-sm">
-        Already have an account?{" "}
-        <Link href="/login" className="underline">
-          Sign in
+        Don&apos;t have an account?{" "}
+        <Link href="/signup" className="underline">
+          Create one
         </Link>
       </p>
     </form>
