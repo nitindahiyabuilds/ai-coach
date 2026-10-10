@@ -32,6 +32,7 @@ function createSession(
     started_at: `${date}T10:00:00Z`,
     completed_at: `${date}T11:00:00Z`,
     notes: null,
+    post_workout_feedback: null,
     created_at: `${date}T11:00:00Z`,
     workout_sets: sets,
   };

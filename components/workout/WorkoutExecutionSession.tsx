@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   addWorkoutSet,
   completeWorkoutSession,
+  updateWorkoutFeedback,
 } from "@/lib/workout/actions";
 import type { WorkoutPlan } from "@/lib/contracts/workout";
 import type {
@@ -19,6 +20,23 @@ type WorkoutExecutionSessionProps = {
 };
 
 type EffortLevel = "easy" | "moderate" | "hard";
+
+type PostWorkoutFeedback =
+  | "easy"
+  | "smooth"
+  | "good"
+  | "hard"
+  | "brutal";
+
+const POST_WORKOUT_FEEDBACK_OPTIONS: Array<
+  readonly [PostWorkoutFeedback, string]
+> = [
+  ["easy", "Easy"],
+  ["smooth", "Smooth"],
+  ["good", "Good"],
+  ["hard", "Hard"],
+  ["brutal", "Brutal"],
+];
 
 function getExerciseSets(
   sets: WorkoutSet[],
@@ -41,6 +59,7 @@ export default function WorkoutExecutionSession({
   const [pendingExercise, setPendingExercise] =
     useState<string | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isSavingFeedback, setIsSavingFeedback] = useState(false);
   const [error, setError] = useState("");
   const [weightInputs, setWeightInputs] = useState<
     Record<string, string>
@@ -191,6 +210,34 @@ export default function WorkoutExecutionSession({
     }
   }
 
+  async function handleFeedback(
+    feedback: PostWorkoutFeedback
+  ) {
+    if (
+      isSavingFeedback ||
+      !isCompleted ||
+      session.post_workout_feedback
+    ) {
+      return;
+    }
+
+    setError("");
+    setIsSavingFeedback(true);
+
+    try {
+      await updateWorkoutFeedback(session.id, feedback);
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save workout feedback."
+      );
+    } finally {
+      setIsSavingFeedback(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -227,6 +274,46 @@ export default function WorkoutExecutionSession({
               Your completed workout and actual performance
               are now available for future workout analysis.
             </p>
+          </div>
+        )}
+
+        {isCompleted && (
+          <div className="rounded-xl border bg-background p-5">
+            <p className="text-lg font-semibold">
+              How did the workout feel?
+            </p>
+
+            {session.post_workout_feedback ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                You rated this workout as{" "}
+                <span className="font-medium capitalize text-foreground">
+                  {session.post_workout_feedback}
+                </span>
+                .
+              </p>
+            ) : (
+              <>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Your feedback helps the coach understand how this workout felt.
+                </p>
+
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  {POST_WORKOUT_FEEDBACK_OPTIONS.map(
+                    ([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => handleFeedback(value)}
+                        disabled={isSavingFeedback}
+                        className="rounded-lg border px-3 py-2 text-sm font-medium capitalize transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {label}
+                      </button>
+                    )
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 

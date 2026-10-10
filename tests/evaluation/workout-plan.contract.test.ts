@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { analyzeWorkoutHistory } from "@/lib/workout/workout";
 import { generateWorkoutPlan } from "@/lib/planning/workout-plan";
+
 function createSession(
   date: string,
   exerciseName: string,
@@ -14,6 +15,7 @@ function createSession(
     started_at: `${date}T10:00:00Z`,
     completed_at: `${date}T11:00:00Z`,
     notes: null,
+    post_workout_feedback: null,
     created_at: `${date}T11:00:00Z`,
     workout_sets: [
       {
@@ -30,9 +32,11 @@ function createSession(
     ],
   };
 }
+
 afterEach(() => {
   vi.useRealTimers();
 });
+
 describe("workout plan evaluation contract", () => {
   it("preserves the deterministic recommendation exactly in the generated plan", () => {
     vi.useFakeTimers();
@@ -53,6 +57,7 @@ describe("workout plan evaluation contract", () => {
           (1000 * 60 * 60 * 24)
       )
     );
+
     expect(plan.exercises).toHaveLength(2);
     expect(plan.exercises).toEqual([
       {

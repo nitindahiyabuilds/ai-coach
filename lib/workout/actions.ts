@@ -3,6 +3,7 @@
 import type {
   CreateWorkoutSessionInput,
   CreateWorkoutSetInput,
+  PostWorkoutFeedback,
   UpdateWorkoutSetInput,
   WorkoutHistoryInput,
 } from "@/lib/contracts/workout-session";
@@ -10,6 +11,7 @@ import type {
 export type {
   CreateWorkoutSessionInput,
   CreateWorkoutSetInput,
+  PostWorkoutFeedback,
   UpdateWorkoutSetInput,
   WorkoutHistoryInput,
 } from "@/lib/contracts/workout-session";
@@ -24,6 +26,7 @@ const WORKOUT_SESSION_SELECT = `
   started_at,
   completed_at,
   notes,
+  post_workout_feedback,
   created_at,
   workout_sets (
     id,
@@ -117,6 +120,12 @@ function isValidDate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+function validatePostWorkoutFeedback(feedback: PostWorkoutFeedback) {
+  if (!["easy", "smooth", "good", "hard", "brutal"].includes(feedback)) {
+    throw new Error("Invalid post-workout feedback");
+  }
+}
+
 export async function createWorkoutSession(
   input: CreateWorkoutSessionInput = {}
 ) {
@@ -157,7 +166,7 @@ export async function createWorkoutSession(
       notes: input.notes ?? null,
     })
     .select(
-      "id, date, started_at, completed_at, notes, created_at"
+      "id, date, started_at, completed_at, notes, post_workout_feedback, created_at"
     )
     .single();
 
@@ -362,12 +371,58 @@ export async function completeWorkoutSession(sessionId: string) {
     .eq("user_id", user.id)
     .is("completed_at", null)
     .select(
-      "id, date, started_at, completed_at, notes, created_at"
+      "id, date, started_at, completed_at, notes, post_workout_feedback, created_at"
     )
     .single();
 
   if (error || !data) {
     throw new Error("Unable to complete workout session");
+  }
+
+  return data;
+}
+
+export async function updateWorkoutFeedback(
+  sessionId: string,
+  feedback: PostWorkoutFeedback
+) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  validatePostWorkoutFeedback(feedback);
+
+  const supabase = await createClient();
+
+  const { data: session, error: sessionError } = await supabase
+    .from("workout_sessions")
+    .select("id, completed_at")
+    .eq("id", sessionId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (sessionError || !session) {
+    throw new Error("Workout session not found");
+  }
+
+  if (session.completed_at === null) {
+    throw new Error("Workout session must be completed before feedback");
+  }
+
+  const { data, error } = await supabase
+    .from("workout_sessions")
+    .update({
+      post_workout_feedback: feedback,
+    })
+    .eq("id", sessionId)
+    .eq("user_id", user.id)
+    .select(WORKOUT_SESSION_SELECT)
+    .single();
+
+  if (error || !data) {
+    throw new Error("Unable to save workout feedback");
   }
 
   return data;
